@@ -1,19 +1,13 @@
 import datetime
 import logging
+import os
 from math import floor
-from os import environ, getenv
+from os import environ, getenv, path
 
 from art import decor, text2art
 
-if environ.get("APPLICATION_PATH") is None:
-    APPLICATION_PATH = "/app"
-else:
-    APPLICATION_PATH = environ.get('APPLICATION_PATH')
-
-if "APPLICATION_PATH_DATA" in environ:
-    APPLICATION_PATH_DATA = getenv("APPLICATION_PATH_DATA")
-else:
-    APPLICATION_PATH_DATA = "/data"
+APPLICATION_PATH = environ.get("APPLICATION_PATH", "/app")
+APPLICATION_PATH_DATA = getenv("APPLICATION_PATH_DATA", "/data")
 
 paypal_footer = """
 <div style="text-align: center" id="paypal" class="paypal_link">
@@ -40,10 +34,9 @@ def daterange(start_date, end_date):
 
 
 def str2bool(v):
-    if type(v) != bool:
+    if not isinstance(v, bool):
         return v.lower() in ("yes", "true", "t", "1")
-    else:
-        return v
+    return v
 
 
 def is_float(element):
@@ -130,9 +123,8 @@ def finish():
 
 
 def get_version():
-    f = open("/app/VERSION", "r")
-    version = f.read()
-    f.close()
+    with open(os.path.join(APPLICATION_PATH, "VERSION")) as f:
+        version = f.read()
     return version.strip()
 
 

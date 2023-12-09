@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import traceback
 from datetime import datetime, timedelta
 from os.path import exists
@@ -26,14 +27,14 @@ from db_schema import (
     Ecowatt,
     Statistique
 )
-from dependencies import str2bool, title, get_version, title_warning
+from utils import str2bool, title, get_version, title_warning
 
 # available_database = ["sqlite", "postgresql", "mysql+pymysql"]
 available_database = ["sqlite", "postgresql"]
-
+from utils import APPLICATION_PATH_DATA, APPLICATION_PATH
 
 class Database:
-    def __init__(self, config, path="/data"):
+    def __init__(self, config, path=APPLICATION_PATH_DATA):
         self.config = config
         self.path = path
 
@@ -48,7 +49,7 @@ class Database:
             else:
                 logging.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
 
-        os.system(f"cd /app; DB_URL='{self.uri}' alembic upgrade head ")
+        subprocess.check_call(["cd", APPLICATION_PATH, "&&", f"DB_URL='{self.uri}'", "alembic", "upgrade", "head"])
 
         self.engine = create_engine(
             self.uri, echo=False,
@@ -168,6 +169,7 @@ class Database:
         except:
             traceback.print_exc()
             logging.critical(f"Database initialize failed!")
+            raise
 
     def purge_database(self):
         logging.separator_warning()

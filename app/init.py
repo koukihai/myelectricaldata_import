@@ -1,3 +1,4 @@
+import sys
 import locale
 import logging
 import time
@@ -7,24 +8,30 @@ from os import getenv, environ, path
 import yaml
 
 from config import LOG_FORMAT, LOG_FORMAT_DATE
-from dependencies import APPLICATION_PATH_DATA, str2bool
+from utils import str2bool, APPLICATION_PATH_DATA
 from models.config import Config
 from models.database import Database
 from models.influxdb import InfluxDB
 from models.mqtt import Mqtt
 
-# LOGGING CONFIGURATION
-config = {}
-if path.exists("/data/config.yaml"):
-    with open(f'/data/config.yaml') as file:
-        config = yaml.load(file, Loader=yaml.FullLoader)
+CONFIG_PATH = path.join(APPLICATION_PATH_DATA, "config.yaml")
+
+# Loading configuration file
+if not path.exists(CONFIG_PATH):
+    raise Exception(f"Config file is not found ({CONFIG_PATH})")
+
+with open(CONFIG_PATH) as file:
+    config = yaml.safe_load(file)
+
+if not config:
+    raise Exception(f"Config file is empty ({CONFIG_PATH})")
 
 if "DEBUG" in environ and str2bool(getenv("DEBUG")):
     logging_level = logging.DEBUG
 else:
     logging_level = logging.INFO
 
-if "log2file" in config and config["log2file"]:
+if config.get("log2file"):
     logging.basicConfig(
         filename=f"/log/myelectricaldata.log",
         format=LOG_FORMAT,
@@ -43,9 +50,9 @@ else:
         level=logging_level
     )
 
-if not path.exists("/data/config.yaml"):
-    logging.critical("Config file is not found (/data/config.yaml)")
-    exit()
+if not path.exists(CONFIG_PATH):
+    logging.critical(f"Config file is not found ({CONFIG_PATH})")
+    sys.exit()
 
 
 class EndpointFilter(logging.Filter):
@@ -68,7 +75,7 @@ uvicorn_logger.addFilter(EndpointFilter(path="/import_status"))
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 CONFIG = Config(
-    path=APPLICATION_PATH_DATA
+    path=CONFIG_PATH
 )
 CONFIG.load()
 CONFIG.display()

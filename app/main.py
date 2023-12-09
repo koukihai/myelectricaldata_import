@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 
 from config import LOG_FORMAT, LOG_FORMAT_DATE, cycle_minimun
-from dependencies import title, get_version, title_warning, logo
+from utils import title, get_version, title_warning, logo
 from init import CONFIG, DB
 from models.jobs import Job
 from routers import account

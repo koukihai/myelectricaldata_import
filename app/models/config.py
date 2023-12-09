@@ -4,16 +4,15 @@ import re
 
 import yaml
 
-from dependencies import title, separator
+from utils import title, separator
 
 
 class Config:
 
     def __init__(self, path="/data"):
-        self.path = path
+        # self.path = path
         self.db = None
-        self.file = "config.yaml"
-        self.path_file = f"{self.path}/{self.file}"
+        self.path_file = path
         self.config = {}
         self.mandatory_parameters = {}
         self.default_port = 5000
@@ -128,7 +127,7 @@ class Config:
     def load(self):
         config_file = f'{self.path_file}'
         if os.path.exists(config_file):
-            with open(f'{self.path}/config.yaml') as file:
+            with open(self.path_file) as file:
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
 
         else:
@@ -150,7 +149,7 @@ class Config:
 
     def check(self):
         separator()
-        logging.info(f"Check {self.file} :")
+        logging.info(f"Check {self.path_file} :")
         lost_params = []
         # CHECK HOME ASSISTANT CONFIGURATION
         config_name = "home_assistant"

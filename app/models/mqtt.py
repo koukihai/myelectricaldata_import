@@ -1,6 +1,6 @@
 import logging
 import paho.mqtt.publish as publish
-from dependencies import title, separator
+from utils import title, separator
 
 from paho.mqtt import client as mqtt
 

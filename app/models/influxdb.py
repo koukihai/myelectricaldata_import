@@ -7,7 +7,7 @@ from influxdb_client.client.util import date_utils
 from influxdb_client.client.util.date_utils import DateHelper
 from influxdb_client.client.write_api import ASYNCHRONOUS, SYNCHRONOUS
 
-from dependencies import title, separator, separator_warning
+from utils import title, separator, separator_warning
 
 
 class InfluxDB:
