@@ -11,6 +11,9 @@ from sqlalchemy import (create_engine, delete, inspect, update, select, func, de
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.pool import NullPool
 
+from alembic.config import Config as AlembicConfig
+from alembic import command
+
 from config import MAX_IMPORT_TRY
 from db_schema import (
     Config,
@@ -33,6 +36,7 @@ from utils import str2bool, title, get_version, title_warning
 available_database = ["sqlite", "postgresql"]
 from utils import APPLICATION_PATH_DATA, APPLICATION_PATH
 
+
 class Database:
     def __init__(self, config, path=APPLICATION_PATH_DATA):
         self.config = config
@@ -49,10 +53,15 @@ class Database:
             else:
                 logging.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
 
-        subprocess.check_call(["cd", APPLICATION_PATH, "&&", f"DB_URL='{self.uri}'", "alembic", "upgrade", "head"])
+        alembic_dir = os.path.join(APPLICATION_PATH, "alembic")
+        alembic_ini = os.path.join(APPLICATION_PATH, "alembic.ini")
+        alembic_cfg = AlembicConfig(alembic_ini)
+        alembic_cfg.set_main_option('script_location', alembic_dir)
+        alembic_cfg.set_main_option('sqlalchemy.url', self.uri)
+        command.upgrade(alembic_cfg, "head")
 
         self.engine = create_engine(
-            self.uri, echo=False,
+            self.uri, echo=True,
             query_cache_size=0,
             isolation_level="READ UNCOMMITTED",
             poolclass=NullPool

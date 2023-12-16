@@ -4,12 +4,12 @@ import re
 
 import yaml
 
-from utils import title, separator
+from utils import title, separator, APPLICATION_PATH_DATA
 
 
 class Config:
 
-    def __init__(self, path="/data"):
+    def __init__(self, path=APPLICATION_PATH_DATA):
         # self.path = path
         self.db = None
         self.path_file = path
@@ -162,29 +162,6 @@ class Config:
             else:
                 if key not in self.config[config_name]:
                     self.config[config_name][key] = data
-
-        # CHECK ENEDIS GATEWAY CONFIGURATION
-        # if "myelectricaldata" not in self.config:
-        #     lost_params.append("myelectricaldata")
-        # else:
-        #     if not isinstance(self.config["myelectricaldata"], dict):
-        #         lost_params.append("myelectricaldata.PDL")
-        #     else:
-        #         for pdl, pdl_data in self.config["myelectricaldata"].items():
-        #             if len(str(pdl)) != 14:
-        #                 lost_params.append(f"PDL must be 14 characters ({pdl} => {len(str(pdl))})")
-        #             if not isinstance(self.config["myelectricaldata"][pdl], dict):
-        #                 lost_params.append(f"myelectricaldata.{pdl}.TOKEN")
-        #             else:
-        #                 for key, data in self.default['myelectricaldata']['pdl'].items():
-        #                     mandatory = False
-        #                     if key in self.mandatory_parameters:
-        #                         mandatory = True
-        #                     if mandatory and not key in self.config["myelectricaldata"][pdl]:
-        #                         lost_params.append(f"myelectricaldata.{pdl}.{key.upper()}")
-        #                     else:
-        #                         if key not in self.config["myelectricaldata"][pdl]:
-        #                             self.config["myelectricaldata"][pdl][key] = data
 
         if lost_params:
             msg = [

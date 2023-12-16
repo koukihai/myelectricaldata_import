@@ -10,7 +10,6 @@ from init import CONFIG, DB
 
 TZ_PARIS = pytz.timezone('Europe/Paris')
 
-
 class HomeAssistantWs:
 
     def __init__(self, usage_point_id):
@@ -24,8 +23,8 @@ class HomeAssistantWs:
         self.token = None
         self.id = 1
         self.current_stats = []
-        if self.load_config():
-            if self.connect():
+        if self._load_config():
+            if self._connect():
                 # self.list_data()
                 # self.clear_data()
                 self.import_data()
@@ -34,7 +33,53 @@ class HomeAssistantWs:
         if self.ws.connected:
             self.ws.close()
 
-    def load_config(self):
+    def _connect(self):
+        check_ssl = CONFIG.get("ssl")
+        sslopt = None
+        if check_ssl and "gateway" in check_ssl:
+            sslopt = {"cert_reqs": ssl.CERT_NONE}
+        self.ws = websocket.WebSocket(sslopt=sslopt)
+
+        try:
+            logging.info(f"Connexion au WebSocket Home Assistant {self.url}")
+            self.ws.connect(self.url, timeout=5, )
+            output = json.loads(self.ws.recv())
+
+        except Exception as e:
+            self.ws.close()
+            logging.error(e)
+            logging.critical(f"Connexion impossible vers Home Assistant: {self.url}")
+            logging.warning(
+                f" => ATTENTION, le WebSocket est également soumis au ban en cas de plusieurs échec d'authentification.")
+            logging.warning(f" => ex: 403: Forbidden")
+            raise
+
+        if "type" in output and output["type"] == "auth_required":
+            logging.info("Authentification requise")
+            self._authenticate()
+
+    def _authenticate(self):
+        data = {"type": "auth", "access_token": self.token}
+        self.ws.send(json.dumps(data))
+        auth_output = json.loads(self.ws.recv())
+        if auth_output["type"] == "auth_ok":
+            logging.info(" => OK")
+            return True
+        logging.error(" => Authentification impossible, merci de vérifier votre url & token.")
+        return False
+
+    def _send(self, data):
+        """
+        Wrapper for ws.send and ws.recv
+        :param data: Request to websocket
+        :return: Response from websocket
+        """
+        if not self.ws.connected:
+            self._connect()
+        self.ws.send(json.dumps(data))
+        return json.loads(self.ws.recv())
+
+    def _load_config(self):
         self.config = CONFIG.home_assistant_ws()
         if self.config is not None:
             if "url" in self.config:
@@ -54,46 +99,16 @@ class HomeAssistantWs:
                 return False
         return True
 
-    def connect(self):
-        try:
-            check_ssl = CONFIG.get("ssl")
-            sslopt = None
-            if check_ssl and "gateway" in check_ssl:
-                sslopt = {"cert_reqs": ssl.CERT_NONE}
-            self.ws = websocket.WebSocket(sslopt=sslopt)
-            logging.info(f"Connexion au WebSocket Home Assistant {self.url}")
-            self.ws.connect(self.url, timeout=5, )
-            output = json.loads(self.ws.recv())
-            if "type" in output and output["type"] == "auth_required":
-                logging.info("Authentification requise")
-                return self.authentificate()
-            return True
-        except Exception as e:
-            self.ws.close()
-            logging.error(e)
-            logging.critical("Connexion impossible vers Home Assistant")
-            logging.warning(
-                f" => ATTENTION, le WebSocket est également soumis au ban en cas de plusieurs échec d'authentification.")
-            logging.warning(f" => ex: 403: Forbidden")
-
-    def authentificate(self):
-        data = {"type": "auth", "access_token": self.token}
-        auth_output = self.send(data)
-        if auth_output["type"] == "auth_ok":
-            logging.info(" => OK")
-            return True
-        else:
-            logging.error(" => Authentification impossible, merci de vérifier votre url & token.")
-            return False
-
     def send(self, data):
-        self.ws.send(json.dumps(data))
+        output = self._send(data)
         self.id = self.id + 1
-        output = json.loads(self.ws.recv())
-        if "type" in output and output["type"] == "result":
-            if not output["success"]:
-                logging.error(f"Erreur d'envoie : {data}")
-                logging.error(output)
+
+        if output["type"] != "result":
+            raise Exception(f"Output type is not 'result'. output = {output}")
+
+        if not output["success"]:
+            raise Exception(f"Failed to send {data}. output = {output}")
+
         return output
 
     def list_data(self):
