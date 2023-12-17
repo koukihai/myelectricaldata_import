@@ -1,5 +1,9 @@
 FROM python:3.11-slim
 
+RUN apt update && apt install -y \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY ./app /app
 
 RUN pip install --no-cache-dir --upgrade pip pip-tools setuptools \
