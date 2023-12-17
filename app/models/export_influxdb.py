@@ -1,7 +1,6 @@
 import ast
 import pytz
 import logging
-from dependencies import title
 
 from init import INFLUXDB, DB
 

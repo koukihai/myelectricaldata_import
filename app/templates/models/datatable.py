@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytz
 
-from dependencies import daterange
+from utils import daterange
 
 utc = pytz.UTC
 

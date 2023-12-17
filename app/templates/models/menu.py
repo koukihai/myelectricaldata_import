@@ -1,4 +1,4 @@
-from dependencies import APPLICATION_PATH
+from utils import APPLICATION_PATH
 
 class Menu:
 

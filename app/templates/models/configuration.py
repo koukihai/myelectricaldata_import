@@ -3,7 +3,7 @@ import datetime
 from jinja2 import Template
 from mergedeep import Strategy, merge
 
-from dependencies import APPLICATION_PATH, str2bool
+from utils import APPLICATION_PATH, str2bool
 
 class Configuration:
 

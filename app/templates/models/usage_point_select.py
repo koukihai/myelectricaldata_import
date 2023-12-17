@@ -1,6 +1,6 @@
 import json
 
-from dependencies import APPLICATION_PATH
+from utils import APPLICATION_PATH
 from jinja2 import Template
 
 

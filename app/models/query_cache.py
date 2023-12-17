@@ -1,7 +1,7 @@
 import json
 import logging
 
-from dependencies import get_version
+from utils import get_version
 from models.query import Query
 
 from config import URL

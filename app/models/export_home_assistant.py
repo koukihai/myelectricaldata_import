@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import pytz
 from dateutil.relativedelta import relativedelta
 
-from dependencies import get_version, truncate
+from utils import get_version, truncate
 from init import MQTT, DB, CONFIG
 from models.stat import Stat
 

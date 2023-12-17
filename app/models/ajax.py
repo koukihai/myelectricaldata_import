@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytz
 
-from dependencies import APPLICATION_PATH, get_version, title
+from utils import APPLICATION_PATH, get_version, title
 from models.stat import Stat
 from models.jobs import Job
 from models.query_cache import Cache

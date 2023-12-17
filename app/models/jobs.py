@@ -3,7 +3,7 @@ import time
 import traceback
 from os import getenv, environ
 
-from dependencies import str2bool, title, finish, get_version, log_usage_point_id, export_finish
+from utils import str2bool, title, finish, get_version, log_usage_point_id, export_finish
 from init import DB, CONFIG
 from models.export_home_assistant import HomeAssistant
 from models.export_home_assistant_ws import HomeAssistantWs

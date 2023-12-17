@@ -4,7 +4,6 @@ import re
 import traceback
 import logging
 
-from dependencies import title
 from models.query import Query
 from init import DB
 

@@ -5,7 +5,7 @@ from datetime import datetime
 import ast
 from dateutil.relativedelta import relativedelta
 
-from dependencies import title
+from utils import title
 
 from config import URL
 from models.query import Query

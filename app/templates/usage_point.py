@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta
 
 import markdown
-from dependencies import APPLICATION_PATH, get_version
+from utils import APPLICATION_PATH, get_version
 from jinja2 import Template
 from mergedeep import Strategy, merge
 from templates.models.configuration import Configuration

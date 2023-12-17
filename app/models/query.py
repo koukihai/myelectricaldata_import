@@ -1,7 +1,7 @@
 import requests
 import logging
 
-from dependencies import str2bool
+from utils import str2bool
 from init import CONFIG
 
 

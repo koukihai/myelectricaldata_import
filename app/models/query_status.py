@@ -5,7 +5,7 @@ import traceback
 from os import environ, getenv
 
 from config import URL
-from dependencies import get_version
+from utils import get_version
 from init import DB
 from models.query import Query
 

@@ -1,4 +1,5 @@
 import logging
+import os
 from os import getenv, environ
 
 import uvicorn
@@ -8,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 
 from config import LOG_FORMAT, LOG_FORMAT_DATE, cycle_minimun
-from utils import title, get_version, title_warning, logo
+from utils import title, get_version, title_warning, logo, APPLICATION_PATH
 from init import CONFIG, DB
 from models.jobs import Job
 from routers import account
@@ -48,7 +49,8 @@ APP = FastAPI(
     title="MyElectricalData",
     swagger_ui_parameters=swagger_configuration
 )
-APP.mount("/static", StaticFiles(directory="/app/static"), name="static")
+static_dir = os.path.join(APPLICATION_PATH, "static")
+APP.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 ROUTER = APIRouter()
 APP.include_router(info.ROUTER)
