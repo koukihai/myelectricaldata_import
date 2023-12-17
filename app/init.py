@@ -1,5 +1,4 @@
 import sys
-import locale
 import logging
 import time
 import typing as t
@@ -71,8 +70,6 @@ class EndpointFilter(logging.Filter):
 
 uvicorn_logger = logging.getLogger("uvicorn.access")
 uvicorn_logger.addFilter(EndpointFilter(path="/import_status"))
-
-locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
 CONFIG = Config(
     path=CONFIG_PATH

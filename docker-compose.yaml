@@ -18,3 +18,9 @@ services:
       - 1893:1883
       - 8093:8083
       - 8893:8883
+  myelectricaldata:
+    build: .
+    volumes:
+      - ./tests/data:/data
+    ports:
+      - 5000:5000
