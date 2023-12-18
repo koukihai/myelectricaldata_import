@@ -19,7 +19,6 @@ from models.query_status import Status
 from models.query_tempo import Tempo
 from models.stat import Stat
 
-
 class Job:
     def __init__(self, usage_point_id=None):
         self.config = CONFIG
@@ -149,25 +148,20 @@ class Job:
                 "notif": "Importation terminée"
             }
 
-    def header_generate(self, token=True):
+    def header_generate(self, usage_point_config, token=True):
         output = {
             'Content-Type': 'application/json',
             'call-service': "myelectricaldata",
             'version': get_version()
         }
         if token:
-            output['Authorization'] = self.usage_point_config.token
+            output['Authorization'] = usage_point_config.token
         return output
 
     def get_gateway_status(self):
         detail = "Récupération du statut de la passerelle :"
-        try:
-            title(detail)
-            Status(headers=self.header_generate(token=False)).ping()
-        except Exception as e:
-            traceback.print_exc()
-            logging.error(f"Erreur lors de la {detail.lower()}")
-            logging.error(e)
+        logging.info(detail)
+        return Status(headers=self.header_generate(token=False)).ping()
 
     def get_account_status(self):
         detail = "Récupération des informations du compte"
@@ -175,25 +169,23 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            status = Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
+            status = Status(headers=self.header_generate(usage_point_config)).status(usage_point_id=usage_point_id)
             if "error" in status and status["error"]:
                 message = f'{status["status_code"]} - {status["description"]["detail"]}'
                 self.db.set_error_log(usage_point_id, message)
             else:
                 self.db.set_error_log(usage_point_id, None)
             export_finish()
+            return status
 
-        try:
-            if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
-                    if usage_point_config.enable:
-                        run(usage_point_config)
-            else:
-                run(self.usage_point_config)
-        except Exception as e:
-            traceback.print_exc()
-            logging.error(f"Erreur lors de la {detail.lower()}")
-            logging.error(e)
+        results = []
+        if self.usage_point_id is None:
+            for usage_point_config in self.usage_points:
+                if usage_point_config.enable:
+                    results.append(run(usage_point_config))
+        else:
+            results.append(run(self.usage_point_config))
+        return results
 
     def get_contract(self):
         detail = "Récupération des informations contractuelles"
