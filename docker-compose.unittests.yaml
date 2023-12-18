@@ -1,0 +1,13 @@
+# All services required to test myelectricaldata
+version: "3.9"
+services:
+  homeassistant:
+    extends:
+      file: docker-compose.yaml
+      service: homeassistant
+    volumes:
+      - ./tests/unittests/homeassistant/config:/config
+  mqtt:
+    extends:
+      file: docker-compose.yaml
+      service: mqtt
