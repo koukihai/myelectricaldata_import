@@ -8,7 +8,7 @@ services:
     environment:
       TZ: Europe/Paris
     volumes:
-      - ./config:/config
+      - ./tests/integration/homeassistant/config:/config
       - /run/dbus:/run/dbus:ro
     ports:
       - 8123:8123
@@ -18,3 +18,14 @@ services:
       - 1893:1883
       - 8093:8083
       - 8893:8883
+  myelectricaldata:
+    build: .
+    depends_on:
+      - mqtt
+      - homeassistant
+    ports:
+      - 5000:5000
+    environment:
+      DEBUG: true
+    volumes:
+      - ./tests/integration/myelectricaldata:/data

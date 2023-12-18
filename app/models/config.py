@@ -6,45 +6,14 @@ import yaml
 
 from utils import title, separator, APPLICATION_PATH_DATA
 
-
 class Config:
 
     def __init__(self, path=APPLICATION_PATH_DATA):
-        # self.path = path
         self.db = None
         self.path_file = path
         self.config = {}
         self.mandatory_parameters = {}
         self.default_port = 5000
-        #     "myelectricaldata": {
-        #         "pdl": {
-        #             "enable": True,
-        #             "name": "",
-        #             "token": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-        #             "cache": True,
-        #             "plan": "BASE",
-        #             "consumption": True,
-        #             "consumption_detail": True,
-        #             "consumption_price_hc": 0,
-        #             "consumption_price_hp": 0,
-        #             "consumption_price_base": 0,
-        #             "consumption_max_date": "",
-        #             "consumption_detail_max_date": "",
-        #             "production": False,
-        #             "production_detail": False,
-        #             "production_max_date": "",
-        #             "production_detail_max_date": "",
-        #             "production_price": 0,
-        #             "offpeak_hours_0": '',
-        #             "offpeak_hours_1": '',
-        #             "offpeak_hours_2": '',
-        #             "offpeak_hours_3": '',
-        #             "offpeak_hours_4": '',
-        #             "offpeak_hours_5": '',
-        #             "offpeak_hours_6": '',
-        #         }
-        #     }
-        # }
         self.default = {
             "cycle": 14400,
             "debug": False,

@@ -61,7 +61,7 @@ class Database:
         command.upgrade(alembic_cfg, "head")
 
         self.engine = create_engine(
-            self.uri, echo=True,
+            self.uri, echo=False,
             query_cache_size=0,
             isolation_level="READ UNCOMMITTED",
             poolclass=NullPool

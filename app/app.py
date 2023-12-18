@@ -150,4 +150,4 @@ if __name__ == '__main__':
     if ssl_config:
         uvicorn_params = {**uvicorn_params, **ssl_config}
 
-    uvicorn.run("main:APP", **uvicorn_params)
+    uvicorn.run("app:APP", **uvicorn_params)
