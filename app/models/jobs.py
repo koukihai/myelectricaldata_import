@@ -163,51 +163,47 @@ class Job:
         logging.info(detail)
         return Status(headers=self.header_generate(token=False)).ping()
 
-    def get_account_status(self):
+    def get_account_status_for_usage_point(self, usage_point_config):
         detail = "Récupération des informations du compte"
+        usage_point_id = usage_point_config.usage_point_id
+        title(f"[{usage_point_id}] {detail} :")
+        status = Status(headers=self.header_generate(usage_point_config)).status(usage_point_id=usage_point_id)
+        if "error" in status and status["error"]:
+            message = f'{status["status_code"]} - {status["description"]["detail"]}'
+            self.db.set_error_log(usage_point_id, message)
+        else:
+            self.db.set_error_log(usage_point_id, None)
+        export_finish()
+        return status
 
-        def run(usage_point_config):
-            usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
-            status = Status(headers=self.header_generate(usage_point_config)).status(usage_point_id=usage_point_id)
-            if "error" in status and status["error"]:
-                message = f'{status["status_code"]} - {status["description"]["detail"]}'
-                self.db.set_error_log(usage_point_id, message)
-            else:
-                self.db.set_error_log(usage_point_id, None)
-            export_finish()
-            return status
-
+    def get_account_status(self):
         results = []
         if self.usage_point_id is None:
             for usage_point_config in self.usage_points:
                 if usage_point_config.enable:
-                    results.append(run(usage_point_config))
+                    results.append(self.get_account_status_for_usage_point(usage_point_config))
         else:
-            results.append(run(self.usage_point_config))
+            results.append(self.get_account_status_for_usage_point(self.usage_point_config))
         return results
 
-    def get_contract(self):
+    def get_contract_for_usage_point(self, usage_point_config):
         detail = "Récupération des informations contractuelles"
+        usage_point_id = usage_point_config.usage_point_id
+        title(f"[{usage_point_id}] {detail} :")
+        status = Contract(headers=self.header_generate(usage_point_config), usage_point_id=usage_point_id, config=usage_point_config) \
+            .get()
+        export_finish()
+        return status
 
-        def run(usage_point_config):
-            usage_point_id = usage_point_config.usage_point_id
-            title(f"[{usage_point_id}] {detail} :")
-            Contract(headers=self.header_generate(), usage_point_id=usage_point_id, config=usage_point_config) \
-                .get()
-            export_finish()
-
-        try:
-            if self.usage_point_id is None:
-                for usage_point_config in self.usage_points:
-                    if usage_point_config.enable:
-                        run(usage_point_config)
-            else:
-                run(self.usage_point_config)
-        except Exception as e:
-            traceback.print_exc()
-            logging.error(f"Erreur lors de la {detail.lower()}")
-            logging.error(e)
+    def get_contract(self):
+        results = []
+        if self.usage_point_id is None:
+            for usage_point_config in self.usage_points:
+                if usage_point_config.enable:
+                    results.append(self.get_contract_for_usage_point(usage_point_config))
+        else:
+            results.append(self.get_contract_for_usage_point(self.usage_point_config))
+        return results
 
     def get_addresses(self):
         detail = "Récupération des coordonnées postales"
