@@ -7,13 +7,13 @@ wipe_influxdb: false # Work only with influxdb > 2.X
 # Exemple pour Postgres :
 # storage_uri: postgresql://myelectricaldata:myelectricaldata@postgres:5432/myelectricaldata
 tempo:
-  enable: true
+  enable: false
 home_assistant: # WITH MQTT DISCOVERY
-  enable: true
+  enable: false
   discovery: true
   discovery_prefix: homeassistant
 home_assistant_ws: # FOR ENERGY TAB
-  enable: true
+  enable: false
   ssl: true
   token: HOME_ASSISTANT_TOKEN_GENERATE_IN_PROFILE_TABS_(BOTTOM)
   url: myhomeassistant.domain.fr
@@ -22,7 +22,7 @@ ssl:
   certfile: ""
   keyfile: ""
 influxdb:
-  enable: true
+  enable: false
   hostname: influxdb
   port: 8086
   token: myelectricaldata
@@ -43,7 +43,7 @@ influxdb:
     max_retry_delay: 125_000
     exponential_base: 2
 mqtt:
-  enable: true
+  enable: false
   hostname: mosquitto
   port: 1883
   username: null

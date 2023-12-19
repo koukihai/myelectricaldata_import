@@ -8,6 +8,7 @@ from art import decor, text2art
 
 APPLICATION_PATH = environ.get("APPLICATION_PATH", "/app")
 APPLICATION_PATH_DATA = getenv("APPLICATION_PATH_DATA", "/data")
+CONFIG_PATH = path.join(APPLICATION_PATH_DATA, "config.yaml")
 
 paypal_footer = """
 <div style="text-align: center" id="paypal" class="paypal_link">

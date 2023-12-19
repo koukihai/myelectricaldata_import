@@ -104,20 +104,6 @@ def main():
     else:
         title("Run in production mode")
 
-    title("Chargement du config.yaml...")
-    usage_point_list = []
-    if CONFIG.list_usage_point() is not None:
-        for upi, upi_data in CONFIG.list_usage_point().items():
-            logging.info(f"{upi}")
-            DB.set_usage_point(upi, upi_data)
-            usage_point_list.append(upi)
-            logging.info("  => Success")
-    else:
-        logging.warning("Aucun point de livraison détecté.")
-
-    title("Nettoyage de la base de données...")
-    DB.clean_database(usage_point_list)
-
     static_dir = os.path.join(APPLICATION_PATH, "static")
     APP.mount("/static", StaticFiles(directory=static_dir), name="static")
 

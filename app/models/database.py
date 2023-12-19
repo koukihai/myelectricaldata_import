@@ -42,10 +42,12 @@ class Database:
         self.config = config
         self.path = path
 
-        if not self.config.storage_config() or self.config.storage_config().startswith("sqlite"):
+        if not self.config.storage_config():
             self.db_name = "cache.db"
             self.db_path = f"{self.path}/{self.db_name}"
             self.uri = f'sqlite:///{self.db_path}?check_same_thread=False'
+        elif self.config.storage_config().startswith("sqlite"):
+            self.uri = self.config.storage_config()
         else:
             self.storage_type = self.config.storage_config().split(":")[0]
             if self.storage_type in available_database:

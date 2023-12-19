@@ -8,13 +8,11 @@ from os import getenv, environ, path
 import yaml
 
 from config import LOG_FORMAT, LOG_FORMAT_DATE
-from utils import str2bool, APPLICATION_PATH_DATA
+from utils import str2bool, CONFIG_PATH
 from models.config import Config
 from models.database import Database
 from models.influxdb import InfluxDB
 from models.mqtt import Mqtt
-
-CONFIG_PATH = path.join(APPLICATION_PATH_DATA, "config.yaml")
 
 # Loading configuration file
 if not path.exists(CONFIG_PATH):
@@ -86,6 +84,19 @@ DB.init_database()
 DB.unlock()
 
 CONFIG.set_db(DB)
+
+usage_point_list = []
+if CONFIG.list_usage_point() is not None:
+    for upi, upi_data in CONFIG.list_usage_point().items():
+        logging.info(f"{upi}")
+        DB.set_usage_point(upi, upi_data)
+        usage_point_list.append(upi)
+        logging.info("  => Success")
+else:
+    logging.warning("Aucun point de livraison détecté.")
+
+DB.clean_database(usage_point_list)
+
 
 INFLUXB_ENABLE = False
 INFLUXDB = None

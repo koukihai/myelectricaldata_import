@@ -148,7 +148,7 @@ class Job:
                 "notif": "Importation terminée"
             }
 
-    def header_generate(self, usage_point_config, token=True):
+    def header_generate(self, usage_point_config=None, token=True):
         output = {
             'Content-Type': 'application/json',
             'call-service': "myelectricaldata",
