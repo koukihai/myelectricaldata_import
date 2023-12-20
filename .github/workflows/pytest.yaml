@@ -2,9 +2,9 @@ name: Publish Docker image
 
 on:
   push:
-    paths:
-      - app/**
-      - tests/**
+#    paths:
+#      - app/**
+#      - tests/**
 
 jobs:
   pytest:
