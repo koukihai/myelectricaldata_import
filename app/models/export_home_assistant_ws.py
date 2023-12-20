@@ -80,7 +80,7 @@ class HomeAssistantWs:
         return json.loads(self.ws.recv())
 
     def _load_config(self):
-        self.config = CONFIG.home_assistant_ws()
+        self.config = CONFIG.home_assistant_ws_config()
         if self.config is not None:
             if "url" in self.config:
                 self.url = self.config['url']
@@ -90,13 +90,11 @@ class HomeAssistantWs:
                     url_prefix = "ws"
                 self.url = f"{url_prefix}://{self.url}/api/websocket"
             else:
-                logging.critical("L'url du WebSocket Home Assistant est obligatoire")
-                return False
+                raise Exception("L'url du WebSocket Home Assistant est obligatoire")
             if "token" in self.config:
                 self.token = self.config['token']
             else:
-                logging.critical("Le token du WebSocket Home Assistant est obligatoire")
-                return False
+                raise Exception("Le token du WebSocket Home Assistant est obligatoire")
         return True
 
     def send(self, data):

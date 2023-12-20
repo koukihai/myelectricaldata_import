@@ -31,7 +31,7 @@ class Job:
         self.influxdb_config = self.config.influxdb_config()
         self.wait_job_start = 10
         self.tempo_enable = False
-
+        self.haws = None
         if self.usage_point_id is None:
             self.usage_points = self.db.get_usage_point_all()
         else:
@@ -433,10 +433,12 @@ class Job:
 
     def export_home_assistant_ws(self):
         detail = "Import des données vers l'onglet Energy de Home Assistant (WebSocket)"
-        usage_point_id = self.usage_point_config.usage_point_id
-        title(f"[{usage_point_id}] {detail}")
         if self.home_assistant_ws_config and "enable" in self.home_assistant_ws_config and str2bool(self.home_assistant_ws_config["enable"]):
-            HomeAssistantWs(usage_point_id)
+            if self.usage_point_config:
+                usage_point_id = self.usage_point_config.usage_point_id
+                self.haws = [HomeAssistantWs(usage_point_id)]
+            else:
+                self.haws = [HomeAssistantWs(up.usage_point_id) for up in self.usage_points]
         else:
             title("Désactivé dans la configuration (Exemple: https://tinyurl.com/2kbd62s9)")
 

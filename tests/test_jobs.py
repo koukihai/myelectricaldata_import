@@ -12,11 +12,20 @@ import utils
 @pytest.fixture(scope="session", autouse=True)
 def update_paths():
     utils.CONFIG_PATH = os.path.abspath(os.path.join(os.getcwd(), "..", "config.exemple.yaml"))
-    utils.APPLICATION_PATH_DATA = os.path.join(os.getcwd(), "unittests", "myelectricaldata")
+    utils.APPLICATION_PATH_DATA = os.path.join(os.getcwd(), "unittests")
     utils.APPLICATION_PATH = os.path.abspath(os.path.join(os.getcwd(), "..", "app"))
-    with mock.patch('models.config.Config.storage_config') as mock_storage:
-        mock_storage.return_value = "sqlite:///abcd.db"
+
+    with mock.patch("models.config.Config.storage_config", autospec=True) as storage_config_patcher, \
+            mock.patch("models.config.Config.home_assistant_ws_config") as export_ws_patcher:
+        storage_config_patcher.return_value = "sqlite:///abcd.db"
+        export_ws_patcher.return_value = {
+            "enable": True,
+            "url": "localhost:8123",
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwMDUyN2RiOGY3MjQ0ZTM5YmFlZWZkMzcwMzU3NTQ0YiIsImlhdCI6MTcwMjczNjI2OCwiZXhwIjoyMDE4MDk2MjY4fQ.DFab7kYOR0MtCyfOhYCCWP8-eUZ-x5497CmYgR8FoJ4"
+        }
+
         yield
+
     os.remove("abcd.db")
 
 
@@ -24,10 +33,12 @@ class TestJob(TestCase):
     def setUp(self) -> None:
         from models.jobs import Job
         self.job = Job()
+        self.job.wait_job_start = 0
 
     @mock.patch('models.jobs.Job.job_import_data')
-    def test_boot(self, _):
+    def test_boot(self, m):
         self.job.boot()
+        m.assert_called_once()
 
     @mock.patch('models.jobs.Job.export_influxdb')
     @mock.patch('models.jobs.Job.export_home_assistant_ws')
@@ -63,14 +74,24 @@ class TestJob(TestCase):
     @mock.patch('models.jobs.Job.header_generate')
     def test_get_gateway_status(self, _):
         res = self.job.get_gateway_status()
+        print(res)
         self.assertTrue(res["status"])
 
-    def test_get_account_status(self):
-        all_valid = all([a['valid'] for a in self.job.get_account_status()])
-        self.assertTrue(all_valid)
+    @mock.patch('models.jobs.Job.get_account_status_for_usage_point')
+    def test_get_account_status(self, m: mock.Mock):
+        m.return_value = {'valid': True, "value": "MockResult"}
+        for a in self.job.get_account_status():
+            print(a)
+            self.assertTrue(a['valid'])
+        self.assertEqual(m.call_count, len(self.job.usage_points))
 
-    def test_get_contract(self):
-        print(self.job.get_contract())
+    @mock.patch('models.jobs.Job.get_contract_for_usage_point')
+    def test_get_contract(self, m):
+        m.return_value = {'valid': True, "value": "MockResult"}
+        for a in self.job.get_contract():
+            print(a)
+            self.assertTrue(a['valid'])
+        self.assertEqual(m.call_count, len(self.job.usage_points))
 
     def test_get_addresses(self):
         self.fail()
@@ -103,7 +124,7 @@ class TestJob(TestCase):
         self.fail()
 
     def test_export_home_assistant_ws(self):
-        self.fail()
+        print(self.job.export_home_assistant_ws())
 
     def test_export_influxdb(self):
         self.fail()

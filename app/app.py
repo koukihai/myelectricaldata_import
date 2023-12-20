@@ -34,38 +34,40 @@ APP.include_router(data.ROUTER)
 APP.include_router(action.ROUTER)
 APP.include_router(account.ROUTER)
 
+static_dir = os.path.join(APPLICATION_PATH, "static")
+APP.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-def set_openapi_schema():
-    INFO = {
-        "title": "MyElectricalData",
-        "version": get_version(),
-        "description": "",
-        "contact": {
-            "name": "m4dm4rtig4n",
-            "url": "https://github.com/MyElectricalData/myelectricaldata/issues",
-        },
-        "license_info": {
-            "name": "Apache 2.0",
-            "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
-        },
-        "routes": APP.routes,
-        "servers": [],
-    }
 
-    OPENAPI_SCHEMA = get_openapi(
-        title=INFO["title"],
-        version=INFO["version"],
-        description=INFO["description"],
-        contact=INFO["contact"],
-        license_info=INFO["license_info"],
-        routes=INFO["routes"],
-        servers=INFO["servers"],
-    )
-    OPENAPI_SCHEMA["info"]["x-logo"] = {
-        "url": "https://pbs.twimg.com/profile_images/1415338422143754242/axomHXR0_400x400.png"
-    }
+INFO = {
+    "title": "MyElectricalData",
+    "version": get_version(),
+    "description": "",
+    "contact": {
+        "name": "m4dm4rtig4n",
+        "url": "https://github.com/MyElectricalData/myelectricaldata/issues",
+    },
+    "license_info": {
+        "name": "Apache 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
+    },
+    "routes": APP.routes,
+    "servers": [],
+}
 
-    APP.openapi_schema = OPENAPI_SCHEMA
+OPENAPI_SCHEMA = get_openapi(
+    title=INFO["title"],
+    version=INFO["version"],
+    description=INFO["description"],
+    contact=INFO["contact"],
+    license_info=INFO["license_info"],
+    routes=INFO["routes"],
+    servers=INFO["servers"],
+)
+OPENAPI_SCHEMA["info"]["x-logo"] = {
+    "url": "https://pbs.twimg.com/profile_images/1415338422143754242/axomHXR0_400x400.png"
+}
+
+APP.openapi_schema = OPENAPI_SCHEMA
 
 
 def validate_cycle():
@@ -104,9 +106,6 @@ def main():
     else:
         title("Run in production mode")
 
-    static_dir = os.path.join(APPLICATION_PATH, "static")
-    APP.mount("/static", StaticFiles(directory=static_dir), name="static")
-
     logo(get_version())
     log_config = uvicorn.config.LOGGING_CONFIG
     log_config["formatters"]["access"]["fmt"] = LOG_FORMAT
@@ -130,5 +129,4 @@ def main():
 
 
 if __name__ == '__main__':
-    set_openapi_schema()
     main()
