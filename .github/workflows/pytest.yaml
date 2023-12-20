@@ -1,8 +1,9 @@
-name: Publish Docker image
+name: Run Pytests
 
 on:
   push:
-#    paths:
+    paths:
+      - need-fixing-wheels-building-first/**
 #      - app/**
 #      - tests/**
 
