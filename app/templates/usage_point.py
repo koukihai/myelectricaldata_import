@@ -1,15 +1,18 @@
+import ast
 import json
+import logging
 from datetime import datetime, timedelta
 
 import markdown
 from dependencies import APPLICATION_PATH, get_version
+from init import CONFIG, DB
 from jinja2 import Template
 from mergedeep import Strategy, merge
+from models.stat import Stat
 from templates.models.configuration import Configuration
 from templates.models.menu import Menu
 from templates.models.sidemenu import SideMenu
 from templates.models.usage_point_select import UsagePointSelect
-from init import CONFIG, DB
 
 
 class UsagePoint:
@@ -280,7 +283,8 @@ class UsagePoint:
             if hasattr(self.usage_point_config, "consumption") and self.usage_point_config.consumption:
                 self.generate_data("consumption")
                 self.consumption()
-                recap_consumption = self.recap(data=self.recap_consumption_data)
+                # recap_consumption = self.recap(data=self.recap_consumption_data)
+                recap_consumption = self.recapv2()
                 body += "<h2>Consommation</h2>"
                 body += str(recap_consumption)
                 body += '<div id="chart_daily_consumption"></div>'
@@ -288,7 +292,7 @@ class UsagePoint:
             # RATIO HP/HC
             if hasattr(self.usage_point_config,
                        "consumption_detail") and self.usage_point_config.consumption_detail:
-                self.generate_chart_hc_hp(data=self.db.get_detail_all(self.usage_point_id, order_dir="asc"))
+                self.generate_chart_hc_hp()
                 body += "<h2>Ratio HC/HP</h2>"
                 body += "<table class='table_hchp'><tr>"
                 body += str(self.recap_hc_hp)
@@ -750,7 +754,7 @@ class UsagePoint:
                   seriesType: 'bars',
                   series: {5: {type: 'line'}}
                 };
-    
+
                 var chart = new google.visualization.ComboChart(document.getElementById('chart_daily_production_compare_""" + year + """'));
                 chart.draw(data, options);
             }
@@ -758,37 +762,32 @@ class UsagePoint:
         else:
             return "Pas de données."
 
-    def generate_chart_hc_hp(self, data):
-        recap = {}
-        for detail in data:
-            year = detail.date.strftime("%Y")
-            value = detail.value
-            measurement_direction = detail.measure_type
-            if not year in recap:
-                recap[year] = {
-                    "HC": 0,
-                    "HP": 0,
-                }
-            recap[year][measurement_direction] = recap[year][measurement_direction] + value
-        for year, data in recap.items():
-            if self.recap_hc_hp == "Pas de données.":
-                self.recap_hc_hp = ""
-            self.recap_hc_hp += f'<td class="table_hp_hc_recap" style="width: {100 / len(recap)}%" id="piChart{year}"></td>'
-            self.javascript += "google.charts.load('current', {'packages':['corechart']});"
-            self.javascript += f"google.charts.setOnLoadCallback(piChart{year});"
-            self.javascript += f"function piChart{year}() " + "{"
-            self.javascript += "   var data = google.visualization.arrayToDataTable([['Type', 'Valeur'],"
-            self.javascript += f"['HC',     {data['HC']}],"
-            self.javascript += f"['HP',     {data['HP']}],"
-            self.javascript += """
-                ]);
+    def generate_chart_hc_hp(self):
+        price_consumption = self.db.get_stat(self.usage_point_id, "price_consumption")
+        if price_consumption and hasattr(price_consumption[0], "value"):
+            recap = ast.literal_eval(price_consumption[0].value)
+            for year, data in sorted(recap.items(), reverse=True):
+                if self.recap_hc_hp == "Pas de données.":
+                    self.recap_hc_hp = ""
+                self.recap_hc_hp += f'<td class="table_hp_hc_recap" style="width: {100 / len(recap)}%" id="piChart{year}"></td>'
+                self.javascript += "google.charts.load('current', {'packages':['corechart']});"
+                self.javascript += f"google.charts.setOnLoadCallback(piChart{year});"
+                self.javascript += f"function piChart{year}() " + "{"
+                self.javascript += "   var data = google.visualization.arrayToDataTable([['Type', 'Valeur'],"
+                self.javascript += f"['HC',     {data['HC']['Wh']}],"
+                self.javascript += f"['HP',     {data['HP']['Wh']}],"
+                # self.javascript += f"['BASE',     {data['BASE']['Wh']}],"
+                self.javascript += """
+                    ]);
 
-                var options = {
-                    title: '""" + year + """',
-                };"""
-            self.javascript += f"var chart = new google.visualization.PieChart(document.getElementById('piChart{year}'));"
-            self.javascript += """chart.draw(data, options);
-            }"""
+                    var options = {
+                        title: '""" + year + """',
+                    };"""
+                self.javascript += f"var chart = new google.visualization.PieChart(document.getElementById('piChart{year}'));"
+                self.javascript += """chart.draw(data, options);
+                }"""
+        else:
+            logging.error("Pas de données.")
 
     def generate_data(self, measurement_direction):
         data = self.db.get_daily_all(self.usage_point_id, measurement_direction)
@@ -808,12 +807,34 @@ class UsagePoint:
             self.recap_production_data = result
 
     def get_price(self, measurement_direction):
+
+        def generate_price_compare(data):
+            evolution_1 = round(data["price_2"] - data["price_1"], 2)
+            evolution_2 = round(data["price_3"] - data["price_1"], 2)
+            color_1 = "green"
+            color_2 = "green"
+            if data["price_1"] < data["price_2"]:
+                color_1 = "red"
+                evolution_1 = f"+{evolution_1}"
+            if data["price_3"] and data["price_1"] < data["price_3"]:
+                color_2 = "red"
+                evolution_2 = f"+{evolution_2}"
+            text_color = "var(--text-color);"
+            if color_1 == "red" and color_2 == "red":
+                text_color = "rgb(16, 150, 24);"
+            return f"<td>" \
+                   f"<div style='float: left; width: 50%; padding-top: 14px;'><b style='font-size: 18px; color: {text_color}'>{data['price_1']} €</b></div>" \
+                   f"<div style='float: right; width: 50%'><span style='color: {color_1}; font-size: 12px'>{data['lib_1']} : {evolution_1}€</span><br>" \
+                   f"<span style='color: {color_2}; font-size: 12px'>{data['lib_2']} : {evolution_2}€</span></div>" \
+                   f"</td>"
+
         data = self.db.get_stat(self.usage_point_id, f"price_{measurement_direction}")
         html = ""
         if len(data) > 0:
             data = data[0]
             html = """
             <table style='width: 100%; text-align: center' class='table_recap'>
+
                 <tr class='table_recap_header'>
                     <td>Années</td>
                     <td>Base</td>
@@ -826,17 +847,27 @@ class UsagePoint:
             if data:
                 data_value = json.loads(data.value)
                 for years, value in data_value.items():
-                    html += "<tr>"
-                    html += f"<td class='table_recap_header'>{years}</td>"
-                    html += f"<td>{round(value['BASE']['euro'], 2)} €</td>"
-                    html += f"<td>{round(value['HC']['euro'] + value['HP']['euro'], 2)} €</td>"
+                    price_base = round(value['BASE']['euro'], 2)
+                    price_hchp = round(value['HC']['euro'] + value['HP']['euro'], 2)
                     tempo_config = self.config.tempo_config()
+                    price_tempo = None
                     if tempo_config and "enable" in tempo_config and tempo_config["enable"]:
                         value_tempo = 0
                         for color, tempo in value["TEMPO"].items():
                             value_tempo = value_tempo + tempo['euro']
-                        html += f"<td>{round(value_tempo, 2)} €</td>"
-                    # html += str(value)
+                        price_tempo = round(value_tempo, 2)
+                    html += "<tr>"
+                    html += f"<td class='table_recap_header'>{years}</td>"
+                    html += generate_price_compare(
+                        {"price_1": price_base, "price_2": price_hchp, "price_3": price_tempo, "lib_1": "HC/HP",
+                         "lib_2": "Tempo"})
+                    html += generate_price_compare(
+                        {"price_1": price_hchp, "price_2": price_base, "price_3": price_tempo, "lib_1": "Base",
+                         "lib_2": "Tempo"})
+                    html += generate_price_compare(
+                        {"price_1": price_tempo, "price_2": price_base, "price_3": price_hchp, "lib_1": "Base",
+                         "lib_2": "HC/HP"})
+
             html += "</table>"
         return html
 
@@ -906,4 +937,68 @@ class UsagePoint:
             body += "</table>"
         else:
             body = "Pas de données."
+        return body
+
+    def recapv2(self, measurement_direction="consumption"):
+
+        idx = 0
+        finish = False
+        output_data = {
+            "years": {},
+            "linear": {}
+        }
+        body_year = ""
+        body_linear = ""
+        while not finish:
+            linear_data = Stat(self.usage_point_id, measurement_direction).get_year_linear(idx)
+            idx += 1
+            if linear_data["value"] == 0:
+                finish = True
+            else:
+                year = linear_data["end"].split("-")[0]
+                year_data = Stat(self.usage_point_id, measurement_direction).get_year(int(year))
+                output_data["years"][year] = year_data['value']
+                output_data["linear"][year] = {
+                    "begin": linear_data["begin"],
+                    "end": linear_data["end"],
+                    "value": linear_data["value"]
+                }
+
+        for year, value in output_data["years"].items():
+            body_year += f"""
+            <td class="table_recap_data">
+                <div class='recap_years_title'>{year}</div>
+                <div class='recap_years_value'>{round(value / 1000)} kWh</div>
+            </td>
+            """
+        for year, data in output_data["linear"].items():
+            last_year = str(int(year) - 1)
+            data_last_years = 0
+            if last_year in output_data["linear"]:
+                data_last_years = round(
+                    (100 * int(data["value"])) / int(output_data["linear"][last_year]["value"]) - 100, 2)
+            if data_last_years >= 0:
+                if data_last_years == 0:
+                    data_last_years_class = "blue"
+                else:
+                    data_last_years_class = "red"
+                    data_last_years = f"+{data_last_years}"
+            else:
+                data_last_years_class = "green"
+            body_linear += f"""
+            <td class="table_recap_data">
+                <div class='recap_years_title'>{data["begin"]} => {data["end"]}</div>
+                <div class='recap_years_value'>{round(data["value"] / 1000)} kWh</div>
+                <div class='recap_years_value {data_last_years_class}'><b>{data_last_years}%</b></div>
+            </td>
+            """
+        body = '<table class="table_recap"><tr>'
+        body += '<th class="table_recap_header">Annuel</th>'
+        body += body_year
+        body += "</tr>"
+        body += "<tr>"
+        body += '<th class="table_recap_header">Annuel linéaire</th>'
+        body += body_linear
+        body += "</tr>"
+        body += "</table>"
         return body
