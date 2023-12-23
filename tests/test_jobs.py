@@ -42,6 +42,22 @@ def generate_jobs():
         yield job
 
 
+# TODO: Extract as a function in main.py
+def copied_from_main():
+    from init import CONFIG, DB
+    usage_point_list = []
+    if CONFIG.list_usage_point() is not None:
+        for upi, upi_data in CONFIG.list_usage_point().items():
+            logging.info(f"{upi}")
+            DB.set_usage_point(upi, upi_data)
+            usage_point_list.append(upi)
+            logging.info("  => Success")
+    else:
+        logging.warning("Aucun point de livraison détecté.")
+
+    DB.clean_database(usage_point_list)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def update_paths():
     project_root = os.path.abspath(os.path.join(os.path.realpath(__file__), "..", ".."))
@@ -49,18 +65,7 @@ def update_paths():
     data_path = os.path.join(project_root, "tests", "data")
     with mock_config() as config_path:
         with setenv(APPLICATION_PATH=app_path, APPLICATION_PATH_DATA=data_path, CONFIG_PATH=config_path):
-            from init import CONFIG, DB
-            usage_point_list = []
-            if CONFIG.list_usage_point() is not None:
-                for upi, upi_data in CONFIG.list_usage_point().items():
-                    logging.info(f"{upi}")
-                    DB.set_usage_point(upi, upi_data)
-                    usage_point_list.append(upi)
-                    logging.info("  => Success")
-            else:
-                logging.warning("Aucun point de livraison détecté.")
-
-            DB.clean_database(usage_point_list)
+            copied_from_main()
             yield
 
 
