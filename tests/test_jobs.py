@@ -24,7 +24,7 @@ def setenv(**envvars):
 
 @contextmanager
 def mock_config():
-    config = {"home_assistant": {"enable": "False"}, "myelectricaldata": {"pdl1": {"enable": True}}}
+    config = {"home_assistant": {"enable": "False"}, "myelectricaldata": {"pdl1": {"enable": False}}}
     with tempfile.NamedTemporaryFile(delete=True, prefix="config-", suffix=".yaml", mode="w") as fp:
         yaml.dump(config, fp)
         fp.flush()
