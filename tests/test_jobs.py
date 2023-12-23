@@ -24,7 +24,8 @@ def setenv(**envvars):
 
 @contextmanager
 def mock_config():
-    config = {"home_assistant": {"enable": "False"}, "myelectricaldata": {"pdl1": {"enable": True}}}
+    config = {"home_assistant": {"enable": "False"},
+              "myelectricaldata": {"pdl1": {"enable": True}, "pdl2": {"enable": False}}}
     with tempfile.NamedTemporaryFile(delete=True, prefix="config-", suffix=".yaml", mode="w") as fp:
         yaml.dump(config, fp)
         fp.flush()
@@ -38,7 +39,7 @@ def generate_jobs():
     params = [None, "pdl1"]
     for param in params:
         job = Job(param)
-        job.wait_job_start = 0
+        job.wait_job_start = 1
         yield job
 
 
