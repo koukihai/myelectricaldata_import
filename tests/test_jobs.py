@@ -42,7 +42,7 @@ def generate_jobs():
         yield job
 
 
-# TODO: Extract as a function in main.py
+# TODO: Extract as a function in main.py to avoid duplication
 def copied_from_main():
     from init import CONFIG, DB
     usage_point_list = []
