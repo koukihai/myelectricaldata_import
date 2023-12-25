@@ -100,38 +100,35 @@ def test_boot(mocker, caplog, job):
 
     m.reset_mock()
 
+def test_job_import_data(mocker, job, caplog):
+    export_methods = ["export_influxdb", "export_home_assistant_ws", "export_home_assistant", "export_mqtt"]
+    per_usage_point_method = ["get_account_status", "get_contract", "get_addresses", "get_consumption", "get_consumption_detail", "get_production", "get_production_detail",
+                              "get_consumption_max_power", "stat_price"] + export_methods
+    per_job_method = ["get_gateway_status", "get_tempo", "get_ecowatt"]
+    caplog.set_level("DEBUG")
+
+    mockers = {}
+    for method in per_job_method + per_usage_point_method:
+        mockers[method] = mocker.patch(f"models.jobs.Job.{method}")
+
+    count_enabled_jobs = len([j for j in job.usage_points if j.enable])
+    expected_logs = ""
+
+    res = job.job_import_data(target=None)
+    expected_logs += "INFO     root:dependencies.py:86 DÉMARRAGE DU JOB D'IMPORTATION DANS 10S\n"
+    assert res["status"] is True
+    for method, m in mockers.items():
+        if method in per_job_method:
+            assert m.call_count == 1
+        else:
+            assert m.call_count == count_enabled_jobs
+        m.reset_mock()
+
+    assert expected_logs in caplog.text
+
 
 class TestJob(TestCase):
 
-    @mock.patch('models.jobs.Job.export_influxdb')
-    @mock.patch('models.jobs.Job.export_home_assistant_ws')
-    @mock.patch('models.jobs.Job.export_home_assistant')
-    @mock.patch('models.jobs.Job.export_mqtt')
-    @mock.patch('models.jobs.Job.stat_price')
-    @mock.patch('models.jobs.Job.get_consumption_max_power')
-    @mock.patch('models.jobs.Job.get_production_detail')
-    @mock.patch('models.jobs.Job.get_production')
-    @mock.patch('models.jobs.Job.get_consumption_detail')
-    @mock.patch('models.jobs.Job.get_consumption')
-    @mock.patch('models.jobs.Job.get_addresses')
-    @mock.patch('models.jobs.Job.get_contract')
-    @mock.patch('models.jobs.Job.get_account_status')
-    @mock.patch('models.jobs.Job.get_ecowatt')
-    @mock.patch('models.jobs.Job.get_tempo')
-    @mock.patch('models.jobs.Job.get_gateway_status')
-    def test_job_import_data(self, *args: mock.Mock):
-        for job in generate_jobs():
-            count_enabled_jobs = len([j for j in job.usage_points if j.enable])
-            with self.assertLogs(logging.getLogger()) as logs:
-                res = job.job_import_data(target=None)
-                self.assertTrue(res["status"])
-                for m in args:
-                    if m._mock_name in ["get_gateway_status", "get_tempo", "get_ecowatt"]:
-                        m.assert_called_once()
-                    else:
-                        self.assertEqual(count_enabled_jobs, m.call_count)
-                    m.reset_mock()
-                self.assertIn("INFO:root:DÉMARRAGE DU JOB D'IMPORTATION DANS 10S", logs.output)
 
     def test_header_generate(self):
         from dependencies import get_version
