@@ -44,6 +44,15 @@ def generate_jobs():
         job.wait_job_start = 1
         yield job
 
+@pytest.fixture(params=[None, 'pdl1'])
+def job(request):
+    from models.jobs import Job
+
+    print(f"Using job with usage point id = {request.param}")
+    job = Job(request.param)
+    job.wait_job_start = 1
+    yield job
+
 
 # TODO: Extract as a function in main.py to avoid duplication
 def copied_from_main():
@@ -72,23 +81,27 @@ def update_paths():
             yield
 
 
+def test_boot(mocker, caplog, job):
+    m = mocker.patch('models.jobs.Job.job_import_data')
+    expected_logs = ""
+
+    with setenv(DEV="true", DEBUG="true"):
+        res = job.boot()
+        expected_logs += 'WARNING  root:jobs.py:43 => Import job disable\n'
+        assert res is False, "called with DEV or DEBUG should return False"
+        assert 0 == m.call_count, "job_import_data should not be called"
+        assert expected_logs == caplog.text
+
+    m.return_value = {"status": "Mocked"}
+    res = job.boot()
+    assert expected_logs == caplog.text
+    assert m.return_value["status"] == res
+    m.assert_called_once()
+
+    m.reset_mock()
+
+
 class TestJob(TestCase):
-    @mock.patch('models.jobs.Job.job_import_data')
-    def test_boot(self, m: mock.Mock):
-        for job in generate_jobs():
-            with setenv(DEV="true", DEBUG="true"), self.assertLogs(logging.getLogger()) as logs:
-                res = job.boot()
-                self.assertFalse(res), "called with DEV or DEBUG should return False"
-                self.assertEqual(0, m.call_count), "job_import_data should not be called"
-                self.assertEqual(['WARNING:root:=> Import job disable'], logs.output)
-
-            m.return_value = {"status": "Mocked"}
-            with self.assertNoLogs(logging.getLogger()):
-                res = job.boot()
-                self.assertEqual(m.return_value["status"], res)
-                m.assert_called_once()
-
-            m.reset_mock()
 
     @mock.patch('models.jobs.Job.export_influxdb')
     @mock.patch('models.jobs.Job.export_home_assistant_ws')
