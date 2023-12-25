@@ -16,6 +16,7 @@ PER_USAGE_POINT_METHODS = ["get_account_status", "get_contract", "get_addresses"
                            "get_consumption_max_power", "stat_price"] + EXPORT_METHODS
 PER_JOB_METHODS = ["get_gateway_status", "get_tempo", "get_ecowatt"]
 
+
 @contextmanager
 def setenv(**envvars):
     old_env = os.environ.copy()
@@ -137,11 +138,21 @@ def test_header_generate(job, caplog):
                 'version': get_version()} == job.header_generate()
     assert expected_logs == caplog.text
 
-def test_get_gateway_status(job, caplog):
+
+@pytest.mark.parametrize("ping_side_effect", [None, Exception("Mocker: Ping failed")])
+def test_get_gateway_status(job, caplog, ping_side_effect, mocker):
+    m_ping = mocker.patch("models.query_status.Status.ping")
+    m_ping.side_effect = ping_side_effect
+    m_ping.return_value = {"mocked": "true"}
+
     res = job.get_gateway_status()
-    assert res["status"] is True
-    assert "INFO     root:dependencies.py:86 RÉCUPÉRATION DU STATUT DE LA PASSERELLE :" in caplog.text
-    assert "INFO     root:query_status.py:32 status: True" in caplog.text
+
+    if ping_side_effect:
+        assert "ERROR    root:jobs.py:170 Erreur lors de la récupération du statut de la passerelle :" in caplog.text
+    else:
+        assert res == m_ping.return_value
+        assert "INFO     root:dependencies.py:86 RÉCUPÉRATION DU STATUT DE LA PASSERELLE :" in caplog.text
+
 
 def test_get_account_status(mocker, job, caplog):
     m_status = mocker.patch("models.query_status.Status.status")
