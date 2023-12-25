@@ -32,7 +32,7 @@ jobs:
           pip install -r app/requirements.txt
       - name: Test with pytest
         run: |
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov pytest-mock
           pytest --cov=app/ --cov-report=xml
       # TODO: Make Codecov upload optional based on presence of CODECOV_TOKEN
       - name: Upload coverage reports to Codecov
