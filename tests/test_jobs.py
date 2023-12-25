@@ -10,6 +10,11 @@ import yaml
 
 from db_schema import UsagePoints
 
+EXPORT_METHODS = ["export_influxdb", "export_home_assistant_ws", "export_home_assistant", "export_mqtt"]
+PER_USAGE_POINT_METHODS = ["get_account_status", "get_contract", "get_addresses", "get_consumption",
+                           "get_consumption_detail", "get_production", "get_production_detail",
+                           "get_consumption_max_power", "stat_price"] + EXPORT_METHODS
+PER_JOB_METHODS = ["get_gateway_status", "get_tempo", "get_ecowatt"]
 
 @contextmanager
 def setenv(**envvars):
@@ -34,7 +39,7 @@ def mock_config():
 
 
 def generate_jobs():
-    usage_point_ids=[None, "pdl1"]
+    usage_point_ids = [None, "pdl1"]
 
     from models.jobs import Job
 
@@ -43,6 +48,7 @@ def generate_jobs():
         job = Job(usage_point_id)
         job.wait_job_start = 1
         yield job
+
 
 @pytest.fixture(params=[None, 'pdl1'])
 def job(request):
@@ -100,15 +106,10 @@ def test_boot(mocker, caplog, job):
 
     m.reset_mock()
 
-def test_job_import_data(mocker, job, caplog):
-    export_methods = ["export_influxdb", "export_home_assistant_ws", "export_home_assistant", "export_mqtt"]
-    per_usage_point_method = ["get_account_status", "get_contract", "get_addresses", "get_consumption", "get_consumption_detail", "get_production", "get_production_detail",
-                              "get_consumption_max_power", "stat_price"] + export_methods
-    per_job_method = ["get_gateway_status", "get_tempo", "get_ecowatt"]
-    caplog.set_level("DEBUG")
 
+def test_job_import_data(mocker, job, caplog):
     mockers = {}
-    for method in per_job_method + per_usage_point_method:
+    for method in PER_JOB_METHODS + PER_USAGE_POINT_METHODS:
         mockers[method] = mocker.patch(f"models.jobs.Job.{method}")
 
     count_enabled_jobs = len([j for j in job.usage_points if j.enable])
@@ -118,7 +119,7 @@ def test_job_import_data(mocker, job, caplog):
     expected_logs += "INFO     root:dependencies.py:86 DÉMARRAGE DU JOB D'IMPORTATION DANS 10S\n"
     assert res["status"] is True
     for method, m in mockers.items():
-        if method in per_job_method:
+        if method in PER_JOB_METHODS:
             assert m.call_count == 1
         else:
             assert m.call_count == count_enabled_jobs
@@ -127,47 +128,36 @@ def test_job_import_data(mocker, job, caplog):
     assert expected_logs in caplog.text
 
 
-class TestJob(TestCase):
+def test_header_generate(job, caplog):
+    from dependencies import get_version
+    expected_logs = ""
+    # header_generate() assumes job.usage_point_config is populated from a side effect
+    for job.usage_point_config in job.usage_points:
+        assert {'Authorization': '', 'Content-Type': 'application/json', 'call-service': 'myelectricaldata',
+                'version': get_version()} == job.header_generate()
+    assert expected_logs == caplog.text
 
+def test_get_gateway_status(job, caplog):
+    res = job.get_gateway_status()
+    assert res["status"] is True
+    assert "INFO     root:dependencies.py:86 RÉCUPÉRATION DU STATUT DE LA PASSERELLE :" in caplog.text
+    assert "INFO     root:query_status.py:32 status: True" in caplog.text
 
-    def test_header_generate(self):
-        from dependencies import get_version
-        for job in generate_jobs():
-            with self.assertNoLogs(logging.getLogger()):
-                # header_generate() assumes job.usage_point_config is populated from a side effect
-                for job.usage_point_config in job.usage_points:
-                    self.assertDictEqual(
-                        {'Authorization': '', 'Content-Type': 'application/json', 'call-service': 'myelectricaldata',
-                         'version': get_version()},
-                        job.header_generate())
+def test_get_account_status(mocker, job, caplog):
+    m_status = mocker.patch("models.query_status.Status.status")
+    m_set_error_log = mocker.patch("models.database.Database.set_error_log")
+    mocker.patch('models.jobs.Job.header_generate')
 
-    @mock.patch('models.jobs.Job.header_generate')
-    def test_get_gateway_status(self, _):
-        for job in generate_jobs():
-            with self.assertLogs(logging.getLogger()) as logs:
-                res = job.get_gateway_status()
-                self.assertTrue(res["status"])
-                self.assertIn("INFO:root:RÉCUPÉRATION DU STATUT DE LA PASSERELLE :", logs.output)
-                self.assertIn("INFO:root:status: True", logs.output)
+    if not job.usage_point_id:
+        expected_count = len([j for j in job.usage_points if j.enable])
+    else:
+        expected_count = 1
+        # If job has usage_point_id, get_account_status() expects
+        # job.usage_point_config.usage_point_id to be populated from a side effect
+        job.usage_point_config = UsagePoints(usage_point_id=job.usage_point_id)
 
-    @mock.patch('models.jobs.Job.header_generate')
-    @mock.patch('models.database.Database.set_error_log')
-    @mock.patch('models.query_status.Status.status')
-    def test_get_account_status(self, m_status: mock.Mock, m_set_error_log: mock.Mock, _):
-        for job in generate_jobs():
-            with self.assertLogs(logging.getLogger()) as logs:
-                if not job.usage_point_id:
-                    expected_count = len([j for j in job.usage_points if j.enable])
-                else:
-                    expected_count = 1
-                    # If job has usage_point_id, get_account_status() expects
-                    # job.usage_point_config.usage_point_id to be populated from a side effect
-                    job.usage_point_config = UsagePoints(usage_point_id=job.usage_point_id)
+    res = job.get_account_status()
 
-                res = job.get_account_status()
-
-                self.assertEqual(expected_count, m_status.call_count)
-                self.assertEqual(expected_count, m_set_error_log.call_count)
-
-            m_status.reset_mock()
-            m_set_error_log.reset_mock()
+    assert expected_count == m_status.call_count
+    assert expected_count == m_set_error_log.call_count
+    assert "INFO     root:dependencies.py:86 [PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :" in caplog.text
