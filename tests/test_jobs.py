@@ -25,7 +25,7 @@ def setenv(**envvars):
 @contextmanager
 def mock_config():
     config = {"home_assistant": {"enable": "False"},
-              "myelectricaldata": {"pdl1": {"enable": True}, "pdl2": {"enable": False}}}
+              "myelectricaldata": {"pdl1": {"enable": True}, "pdl2": {"enable": False}, "pdl3": {"enable": False}}}
     with tempfile.NamedTemporaryFile(delete=True, prefix="config-", suffix=".yaml", mode="w") as fp:
         yaml.dump(config, fp)
         fp.flush()
@@ -34,11 +34,13 @@ def mock_config():
 
 
 def generate_jobs():
+    usage_point_ids=[None, "pdl1"]
+
     from models.jobs import Job
 
-    params = [None, "pdl1"]
-    for param in params:
-        job = Job(param)
+    for usage_point_id in usage_point_ids:
+        print(f"Using job with usage point id = {usage_point_id}")
+        job = Job(usage_point_id)
         job.wait_job_start = 1
         yield job
 
@@ -74,7 +76,6 @@ class TestJob(TestCase):
     @mock.patch('models.jobs.Job.job_import_data')
     def test_boot(self, m: mock.Mock):
         for job in generate_jobs():
-            print(job)
             with setenv(DEV="true", DEBUG="true"), self.assertLogs(logging.getLogger()) as logs:
                 res = job.boot()
                 self.assertFalse(res), "called with DEV or DEBUG should return False"
@@ -107,6 +108,7 @@ class TestJob(TestCase):
     @mock.patch('models.jobs.Job.get_gateway_status')
     def test_job_import_data(self, *args: mock.Mock):
         for job in generate_jobs():
+            count_enabled_jobs = len([j for j in job.usage_points if j.enable])
             with self.assertLogs(logging.getLogger()) as logs:
                 res = job.job_import_data(target=None)
                 self.assertTrue(res["status"])
@@ -114,7 +116,7 @@ class TestJob(TestCase):
                     if m._mock_name in ["get_gateway_status", "get_tempo", "get_ecowatt"]:
                         m.assert_called_once()
                     else:
-                        self.assertEqual(len([j for j in job.usage_points if j.enable]), m.call_count)
+                        self.assertEqual(count_enabled_jobs, m.call_count)
                     m.reset_mock()
                 self.assertIn("INFO:root:DÉMARRAGE DU JOB D'IMPORTATION DANS 10S", logs.output)
 
@@ -122,7 +124,7 @@ class TestJob(TestCase):
         from dependencies import get_version
         for job in generate_jobs():
             with self.assertNoLogs(logging.getLogger()):
-                # self.header_generate() assumes self.usage_point_config is overwritten
+                # header_generate() assumes job.usage_point_config is populated from a side effect
                 for job.usage_point_config in job.usage_points:
                     self.assertDictEqual(
                         {'Authorization': '', 'Content-Type': 'application/json', 'call-service': 'myelectricaldata',
@@ -137,3 +139,25 @@ class TestJob(TestCase):
                 self.assertTrue(res["status"])
                 self.assertIn("INFO:root:RÉCUPÉRATION DU STATUT DE LA PASSERELLE :", logs.output)
                 self.assertIn("INFO:root:status: True", logs.output)
+
+    @mock.patch('models.jobs.Job.header_generate')
+    @mock.patch('models.database.Database.set_error_log')
+    @mock.patch('models.query_status.Status.status')
+    def test_get_account_status(self, m_status: mock.Mock, m_set_error_log: mock.Mock, _):
+        for job in generate_jobs():
+            with self.assertLogs(logging.getLogger()) as logs:
+                if not job.usage_point_id:
+                    expected_count = len([j for j in job.usage_points if j.enable])
+                else:
+                    expected_count = 1
+                    # If job has usage_point_id, get_account_status() expects
+                    # job.usage_point_config.usage_point_id to be populated from a side effect
+                    job.usage_point_config = UsagePoints(usage_point_id=job.usage_point_id)
+
+                res = job.get_account_status()
+
+                self.assertEqual(expected_count, m_status.call_count)
+                self.assertEqual(expected_count, m_set_error_log.call_count)
+
+            m_status.reset_mock()
+            m_set_error_log.reset_mock()
