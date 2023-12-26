@@ -154,10 +154,20 @@ def test_get_gateway_status(job, caplog, ping_side_effect, mocker):
         assert "INFO     root:dependencies.py:86 RÉCUPÉRATION DU STATUT DE LA PASSERELLE :" in caplog.text
 
 
-def test_get_account_status(mocker, job, caplog):
+@pytest.mark.parametrize('status_return_value, is_supported', [
+    ({}, True),
+    ({'any_key': 'any_value'}, True),
+    ({'error': 'only'}, False),
+    ({'error': 'with all fields', 'status_code': '5xx', 'description': {'detail': 'proper error'}}, True)
+])
+@pytest.mark.parametrize('status_side_effect', [None, Exception("Mocker: Status failed")])
+def test_get_account_status(mocker, job, caplog, status_side_effect, status_return_value, is_supported):
     m_status = mocker.patch("models.query_status.Status.status")
     m_set_error_log = mocker.patch("models.database.Database.set_error_log")
     mocker.patch('models.jobs.Job.header_generate')
+
+    m_status.side_effect = status_side_effect
+    m_status.return_value = status_return_value
 
     if not job.usage_point_id:
         expected_count = len([j for j in job.usage_points if j.enable])
@@ -169,6 +179,19 @@ def test_get_account_status(mocker, job, caplog):
 
     res = job.get_account_status()
 
-    assert expected_count == m_status.call_count
-    assert expected_count == m_set_error_log.call_count
     assert "INFO     root:dependencies.py:86 [PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :" in caplog.text
+    if status_side_effect is None and is_supported:
+        assert expected_count == m_status.call_count
+        assert expected_count == m_set_error_log.call_count
+    elif status_side_effect:
+        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
+        assert f"ERROR    root:jobs.py:197 {status_side_effect}" in caplog.text
+        assert expected_count == m_status.call_count
+        assert 0 == m_set_error_log.call_count  # set_error_log is not called in case status() raises an exception
+    elif not is_supported:
+        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
+        assert "ERROR    root:jobs.py:197 'status_code'" in caplog.text
+        assert expected_count == m_status.call_count
+        # set_error_log is not called in case status() returns
+        # a dict with an error key but no status_code or description.detail
+        assert 0 == m_set_error_log.call_count
