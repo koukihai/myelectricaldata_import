@@ -204,20 +204,25 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
         m_status.assert_called_once_with(usage_point_id=j.usage_point_id)
 
 
-@pytest.mark.parametrize('contract_return_value, is_supported', [
-    ({}, True),
-    ({'any_key': 'any_value'}, True),
-    ({'error': 'only'}, False),
-    ({'error': 'with all fields', 'status_code': '5xx', 'description': {'detail': 'proper error'}}, True)
+@pytest.mark.parametrize('method, patch, details, line_no', [
+    ("get_contract", "models.query_contract.Contract.get", "Récupération des informations contractuelles", 218),
+    ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 239),
 ])
-@pytest.mark.parametrize('contract_side_effect', [None, Exception("Mocker: Contract failed")])
-def test_get_contract(mocker, job, caplog, contract_side_effect, contract_return_value, is_supported):
-    m_get = mocker.patch("models.query_contract.Contract.get")
+@pytest.mark.parametrize('return_value', [
+    {},
+    {'any_key': 'any_value'},
+    {'error': 'only'},
+    {'error': 'with all fields', 'status_code': '5xx', 'description': {'detail': 'proper error'}}
+])
+@pytest.mark.parametrize('side_effect', [None, Exception("Mocker: call failed")])
+def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, method, patch, details, line_no):
+    # The methods below don't check for the return value
+    m = mocker.patch(patch)
     m_set_error_log = mocker.patch("models.database.Database.set_error_log")
     mocker.patch('models.jobs.Job.header_generate')
 
-    m_get.side_effect = contract_side_effect
-    m_get.return_value = contract_return_value
+    m.side_effect = side_effect
+    m.return_value = return_value
 
     enabled_usage_points = [up for up in job.usage_points if up.enable]
     if not job.usage_point_id:
@@ -228,21 +233,21 @@ def test_get_contract(mocker, job, caplog, contract_side_effect, contract_return
         # job.usage_point_config.usage_point_id to be populated from a side effect
         job.usage_point_config = UsagePoints(usage_point_id=job.usage_point_id)
 
-    res = job.get_contract()
+    res = getattr(job, method)()
 
-    assert "INFO     root:dependencies.py:86 [PDL1] RÉCUPÉRATION DES INFORMATIONS CONTRACTUELLES :" in caplog.text
-    if contract_side_effect:
+    assert f"INFO     root:dependencies.py:86 [PDL1] {details.upper()} :" in caplog.text
+    if side_effect:
         # When get() throws an exception, no error is displayed
-        assert "ERROR    root:jobs.py:218 Erreur lors de la récupération des informations contractuelles" in caplog.text
-        assert f"ERROR    root:jobs.py:219 {contract_side_effect}" in caplog.text
-    elif contract_return_value:
+        assert f"ERROR    root:jobs.py:{line_no} Erreur lors de la {details.lower()}" in caplog.text
+        assert f"ERROR    root:jobs.py:{line_no+1} {side_effect}" in caplog.text
+    elif return_value:
         # No matter what get() returns, get_contract() will always finish successfully
-        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations contractuelles" not in caplog.text
-        assert "ERROR    root:jobs.py:197 'status_code'" not in caplog.text
+        assert f"ERROR    root:jobs.py:{line_no} Erreur lors de la {details.lower()}" not in caplog.text
+        assert f"ERROR    root:jobs.py:{line_no+1} 'status_code'" not in caplog.text
 
     # Ensuring status() is called exactly as many times as enabled usage_points
     # and only once per enabled usage_point
-    assert expected_count == m_get.call_count
+    assert expected_count == m.call_count
 
     # set_error_log is never called
     m_set_error_log.assert_not_called()
