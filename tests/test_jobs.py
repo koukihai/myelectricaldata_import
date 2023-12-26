@@ -207,6 +207,7 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
 @pytest.mark.parametrize('method, patch, details, line_no', [
     ("get_contract", "models.query_contract.Contract.get", "Récupération des informations contractuelles", 218),
     ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 239),
+    ("get_consumption_max_power", "models.query_power.Power.get", "Récupération de la puissance maximum journalière", 359)
 ])
 @pytest.mark.parametrize('return_value', [
     {},
@@ -235,7 +236,11 @@ def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, met
 
     res = getattr(job, method)()
 
-    assert f"INFO     root:dependencies.py:86 [PDL1] {details.upper()} :" in caplog.text
+    if method == "get_consumption_max_power" and job.usage_point_id is None:
+        # This method uses self.usage_point_id instead of usage_point_id
+        assert f"INFO     root:dependencies.py:86 [NONE] {details.upper()} :" in caplog.text
+    else:
+        assert f"INFO     root:dependencies.py:86 [PDL1] {details.upper()} :" in caplog.text
     if side_effect:
         # When get() throws an exception, no error is displayed
         assert f"ERROR    root:jobs.py:{line_no} Erreur lors de la {details.lower()}" in caplog.text
