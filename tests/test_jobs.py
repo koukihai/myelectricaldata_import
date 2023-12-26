@@ -169,8 +169,9 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
     m_status.side_effect = status_side_effect
     m_status.return_value = status_return_value
 
+    enabled_usage_points = [up for up in job.usage_points if up.enable]
     if not job.usage_point_id:
-        expected_count = len([j for j in job.usage_points if j.enable])
+        expected_count = len(enabled_usage_points)
     else:
         expected_count = 1
         # If job has usage_point_id, get_account_status() expects
@@ -181,17 +182,23 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
 
     assert "INFO     root:dependencies.py:86 [PDL1] RÉCUPÉRATION DES INFORMATIONS DU COMPTE :" in caplog.text
     if status_side_effect is None and is_supported:
-        assert expected_count == m_status.call_count
         assert expected_count == m_set_error_log.call_count
+        if status_return_value.get("error"):
+            m_set_error_log.assert_called_with('pdl1', '5xx - proper error')
     elif status_side_effect:
         assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
         assert f"ERROR    root:jobs.py:197 {status_side_effect}" in caplog.text
-        assert expected_count == m_status.call_count
-        assert 0 == m_set_error_log.call_count  # set_error_log is not called in case status() raises an exception
+        # set_error_log is not called in case status() raises an exception
+        assert 0 == m_set_error_log.call_count
     elif not is_supported:
         assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
         assert "ERROR    root:jobs.py:197 'status_code'" in caplog.text
-        assert expected_count == m_status.call_count
         # set_error_log is not called in case status() returns
         # a dict with an error key but no status_code or description.detail
         assert 0 == m_set_error_log.call_count
+
+    # Ensuring status() is called exactly as many times as enabled usage_points
+    # and only once per enabled usage_point
+    assert expected_count == m_status.call_count
+    for j in enabled_usage_points:
+        m_status.assert_called_once_with(usage_point_id=j.usage_point_id)
