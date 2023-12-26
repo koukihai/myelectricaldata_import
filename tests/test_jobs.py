@@ -202,3 +202,47 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
     assert expected_count == m_status.call_count
     for j in enabled_usage_points:
         m_status.assert_called_once_with(usage_point_id=j.usage_point_id)
+
+
+@pytest.mark.parametrize('contract_return_value, is_supported', [
+    ({}, True),
+    ({'any_key': 'any_value'}, True),
+    ({'error': 'only'}, False),
+    ({'error': 'with all fields', 'status_code': '5xx', 'description': {'detail': 'proper error'}}, True)
+])
+@pytest.mark.parametrize('contract_side_effect', [None, Exception("Mocker: Contract failed")])
+def test_get_contract(mocker, job, caplog, contract_side_effect, contract_return_value, is_supported):
+    m_get = mocker.patch("models.query_contract.Contract.get")
+    m_set_error_log = mocker.patch("models.database.Database.set_error_log")
+    mocker.patch('models.jobs.Job.header_generate')
+
+    m_get.side_effect = contract_side_effect
+    m_get.return_value = contract_return_value
+
+    enabled_usage_points = [up for up in job.usage_points if up.enable]
+    if not job.usage_point_id:
+        expected_count = len(enabled_usage_points)
+    else:
+        expected_count = 1
+        # If job has usage_point_id, get_account_status() expects
+        # job.usage_point_config.usage_point_id to be populated from a side effect
+        job.usage_point_config = UsagePoints(usage_point_id=job.usage_point_id)
+
+    res = job.get_contract()
+
+    assert "INFO     root:dependencies.py:86 [PDL1] RÉCUPÉRATION DES INFORMATIONS CONTRACTUELLES :" in caplog.text
+    if contract_side_effect:
+        # When get() throws an exception, no error is displayed
+        assert "ERROR    root:jobs.py:218 Erreur lors de la récupération des informations contractuelles" in caplog.text
+        assert f"ERROR    root:jobs.py:219 {contract_side_effect}" in caplog.text
+    elif contract_return_value:
+        # No matter what get() returns, get_contract() will always finish successfully
+        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations contractuelles" not in caplog.text
+        assert "ERROR    root:jobs.py:197 'status_code'" not in caplog.text
+
+    # Ensuring status() is called exactly as many times as enabled usage_points
+    # and only once per enabled usage_point
+    assert expected_count == m_get.call_count
+
+    # set_error_log is never called
+    m_set_error_log.assert_not_called()
