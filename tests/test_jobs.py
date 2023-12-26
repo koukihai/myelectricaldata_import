@@ -30,8 +30,21 @@ def setenv(**envvars):
 
 @contextmanager
 def mock_config():
-    config = {"home_assistant": {"enable": "False"},
-              "myelectricaldata": {"pdl1": {"enable": True}, "pdl2": {"enable": False}, "pdl3": {"enable": False}}}
+    config = {
+        "home_assistant": {"enable": "False"},
+        "myelectricaldata": {
+            "pdl1": {
+                "enable": True,
+                "consumption": True,
+                "consumption_detail": True,
+                "production": True,
+                "production_detail": True
+            },
+            "pdl2": {"enable": False},
+            "pdl3": {"enable": False}
+        }
+    }
+
     with tempfile.NamedTemporaryFile(delete=True, prefix="config-", suffix=".yaml", mode="w") as fp:
         yaml.dump(config, fp)
         fp.flush()
@@ -207,7 +220,11 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
 @pytest.mark.parametrize('method, patch, details, line_no', [
     ("get_contract", "models.query_contract.Contract.get", "Récupération des informations contractuelles", 218),
     ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 239),
-    ("get_consumption_max_power", "models.query_power.Power.get", "Récupération de la puissance maximum journalière", 359)
+    ("get_consumption", "models.query_daily.Daily.get", "Récupération de la consommation journalière", 263),
+    ("get_consumption_detail", "models.query_detail.Detail.get", "Récupération de la consommation détaillée", 287),
+    ("get_production", "models.query_daily.Daily.get", "Récupération de la production journalière", 314),
+    ("get_production_detail", "models.query_detail.Detail.get", "Récupération de la production détaillée", 338),
+    ("get_consumption_max_power", "models.query_power.Power.get", "Récupération de la puissance maximum journalière", 359),
 ])
 @pytest.mark.parametrize('return_value', [
     {},
@@ -217,7 +234,12 @@ def test_get_account_status(mocker, job, caplog, status_side_effect, status_retu
 ])
 @pytest.mark.parametrize('side_effect', [None, Exception("Mocker: call failed")])
 def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, method, patch, details, line_no):
-    # The methods below don't check for the return value
+    """
+    This test covers all methods that call "get" methods from query objects:
+    - without checking for their return value
+    - without calling set_error_log on failure
+    """
+
     m = mocker.patch(patch)
     m_set_error_log = mocker.patch("models.database.Database.set_error_log")
     mocker.patch('models.jobs.Job.header_generate')
@@ -232,7 +254,13 @@ def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, met
         expected_count = 1
         # If job has usage_point_id, get_account_status() expects
         # job.usage_point_config.usage_point_id to be populated from a side effect
-        job.usage_point_config = UsagePoints(usage_point_id=job.usage_point_id)
+        job.usage_point_config = UsagePoints(
+            usage_point_id=job.usage_point_id,
+            production=True,
+            production_detail=True,
+            consumption=True,
+            consumption_detail=True,
+        )
 
     res = getattr(job, method)()
 
@@ -241,17 +269,17 @@ def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, met
         assert f"INFO     root:dependencies.py:86 [NONE] {details.upper()} :" in caplog.text
     else:
         assert f"INFO     root:dependencies.py:86 [PDL1] {details.upper()} :" in caplog.text
+
     if side_effect:
         # When get() throws an exception, no error is displayed
         assert f"ERROR    root:jobs.py:{line_no} Erreur lors de la {details.lower()}" in caplog.text
         assert f"ERROR    root:jobs.py:{line_no+1} {side_effect}" in caplog.text
     elif return_value:
-        # No matter what get() returns, get_contract() will always finish successfully
+        # No matter what get() returns, the method will never log an error
         assert f"ERROR    root:jobs.py:{line_no} Erreur lors de la {details.lower()}" not in caplog.text
         assert f"ERROR    root:jobs.py:{line_no+1} 'status_code'" not in caplog.text
 
-    # Ensuring status() is called exactly as many times as enabled usage_points
-    # and only once per enabled usage_point
+    # Ensuring method is called exactly as many times as enabled usage_points
     assert expected_count == m.call_count
 
     # set_error_log is never called
