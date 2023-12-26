@@ -247,6 +247,7 @@ def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, met
     m.side_effect = side_effect
     m.return_value = return_value
 
+    conf = job.config.usage_point_id_config(job.usage_point_id)
     enabled_usage_points = [up for up in job.usage_points if up.enable]
     if not job.usage_point_id:
         expected_count = len(enabled_usage_points)
@@ -256,10 +257,10 @@ def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, met
         # job.usage_point_config.usage_point_id to be populated from a side effect
         job.usage_point_config = UsagePoints(
             usage_point_id=job.usage_point_id,
-            production=True,
-            production_detail=True,
-            consumption=True,
-            consumption_detail=True,
+            consumption=conf.get("consumption"),
+            consumption_detail=conf.get("consumption_detail"),
+            production=conf.get("production"),
+            production_detail=conf.get("production_detail")
         )
 
     res = getattr(job, method)()
