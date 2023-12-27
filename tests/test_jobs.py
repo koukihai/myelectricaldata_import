@@ -3,7 +3,7 @@ import os
 import tempfile
 from contextlib import contextmanager
 
-import pytest as pytest
+import pytest
 import yaml
 
 from db_schema import UsagePoints
