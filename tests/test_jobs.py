@@ -2,8 +2,6 @@ import logging
 import os
 import tempfile
 from contextlib import contextmanager
-from unittest import TestCase
-from unittest import mock
 
 import pytest as pytest
 import yaml
