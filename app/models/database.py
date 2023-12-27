@@ -50,17 +50,7 @@ class Database:
             else:
                 logging.critical(f"Database {self.storage_type} not supported (only SQLite & PostgresSQL)")
 
-        # Use alembic commands rather than dropping into shell for running migrations
-        alembic_dir = os.path.join(APPLICATION_PATH, "alembic")
-        alembic_ini = os.path.join(APPLICATION_PATH, "alembic.ini")
-        alembic_cfg = AlembicConfig(alembic_ini)
-        alembic_cfg.set_main_option('script_location', alembic_dir)
-
-        # Define DB_URL envvar rather than using set_main_option so that command line
-        # migrations are still possible
-        os.environ["DB_URL"] = self.uri
-
-        command.upgrade(alembic_cfg, "head")
+        os.system(f"cd {APPLICATION_PATH}; DB_URL='{self.uri}' alembic upgrade head ")
 
         self.engine = create_engine(
             self.uri, echo=False,
