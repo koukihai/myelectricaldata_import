@@ -2,7 +2,7 @@ import json
 import logging
 
 from dependencies import get_version
-from models.query import Query
+from lib.query import Query
 
 from config import URL
 
