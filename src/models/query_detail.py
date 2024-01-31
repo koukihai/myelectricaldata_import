@@ -4,8 +4,8 @@ import re
 from datetime import datetime, timedelta
 
 from dependencies import title
-from models.database import ConsumptionDetail, ProductionDetail
-from models.query import Query
+from datasources.database import ConsumptionDetail, ProductionDetail
+from lib.query import Query
 from init import DB, CONFIG
 
 from config import DETAIL_MAX_DAYS, URL

@@ -117,7 +117,7 @@ def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, met
     """
 
     m = mocker.patch(patch)
-    m_set_error_log = mocker.patch("models.database.Database.set_error_log")
+    m_set_error_log = mocker.patch("datasources.database.Database.set_error_log")
     mocker.patch("models.jobs.Job.header_generate")
 
     m.side_effect = side_effect

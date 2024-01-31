@@ -7,16 +7,15 @@ from os import environ, getenv
 from config import URL
 from dependencies import get_version
 from init import DB
-from models.query import Query
+from lib.query import Query
 
 
-class Status:
+class Gateway:
     def __init__(self, headers=None):
-        self.db = DB
         self.url = URL
         self.headers = headers
 
-    def ping(self):
+    def status(self):
         target = f"{self.url}/ping"
         status = {
             "version": get_version(),
@@ -35,6 +34,13 @@ class Status:
                 return status
         except LookupError:
             return status
+
+
+class Status:
+    def __init__(self, headers=None):
+        self.db = DB
+        self.url = URL
+        self.headers = headers
 
     def status(self, usage_point_id):
         usage_point_id_config = self.db.get_usage_point(usage_point_id)

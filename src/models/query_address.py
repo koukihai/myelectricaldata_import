@@ -3,7 +3,7 @@ import traceback
 import logging
 
 from dependencies import title
-from models.query import Query
+from lib.query import Query
 from init import CONFIG, DB
 
 from config import URL

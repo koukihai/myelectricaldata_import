@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from dependencies import title
 from dateutil.relativedelta import relativedelta
 from config import DAILY_MAX_DAYS, URL
-from models.query import Query
+from lib.query import Query
 from models.stat import Stat
 from init import CONFIG, DB
 

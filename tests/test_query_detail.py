@@ -15,8 +15,8 @@ class MockResponse:
 def test_get(mocker, measure_type):
     from models.query_detail import Detail
 
-    m_get: mock.Mock = mocker.patch("models.query.Query.get")
-    m_insert_detail: mock.Mock = mocker.patch("models.database.Database.insert_detail")
+    m_get: mock.Mock = mocker.patch("lib.query.Query.get")
+    m_insert_detail: mock.Mock = mocker.patch("datasources.database.Database.insert_detail")
     m_get.return_value = MockResponse(
         status_code=200,
         text='{"meter_reading": {"interval_reading": [{"interval_length": "30", '

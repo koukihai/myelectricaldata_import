@@ -11,7 +11,7 @@ from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_ecowatt import Ecowatt
 from models.query_power import Power
-from models.query_status import Status
+from datasources.gateway.gateway import Status, Gateway
 from models.query_tempo import Tempo
 from init import DB, CONFIG
 
@@ -49,7 +49,7 @@ class Ajax:
         else:
             msg = "Check de l'état de la passerelle."
         title(msg)
-        return Status().ping()
+        return Gateway().status()
 
     def account_status(self):
         title(f"[{self.usage_point_id}] Check du statut du compte.")

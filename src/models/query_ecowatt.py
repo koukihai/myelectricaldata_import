@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 from dependencies import title
 
 from config import URL
-from models.query import Query
+from lib.query import Query
 from init import DB, CONFIG
 
 

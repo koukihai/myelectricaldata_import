@@ -1,7 +1,7 @@
 import logging
 import time
 import traceback
-from os import getenv, environ
+from os import getenv
 
 from dependencies import (
     str2bool,
@@ -22,7 +22,7 @@ from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_ecowatt import Ecowatt
 from models.query_power import Power
-from models.query_status import Status
+from datasources.gateway.gateway import Status, Gateway
 from models.query_tempo import Tempo
 from models.stat import Stat
 
@@ -164,7 +164,7 @@ class Job:
         detail = "Récupération du statut de la passerelle :"
         try:
             title(detail)
-            Status(headers=self.header_generate(token=False)).ping()
+            Gateway(headers=self.header_generate(token=False)).status()
         except Exception as e:
             traceback.print_exc()
             logging.error(f"Erreur lors de la {detail.lower()}")

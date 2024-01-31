@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 from config import URL
 from dependencies import title
 from init import DB, CONFIG
-from models.query import Query
+from lib.query import Query
 
 
 class Tempo:

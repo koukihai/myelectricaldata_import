@@ -26,8 +26,8 @@ from test_jobs import job
 def test_get_account_status(mocker, job, caplog, status_response, status_code, requests_mock):
     from config import URL
 
-    m_set_error_log = mocker.patch("models.database.Database.set_error_log")
-    m_usage_point_update = mocker.patch("models.database.Database.usage_point_update")
+    m_set_error_log = mocker.patch("datasources.database.Database.set_error_log")
+    m_usage_point_update = mocker.patch("datasources.database.Database.usage_point_update")
     mocker.patch("models.jobs.Job.header_generate")
     requests_mocks = list()
 
