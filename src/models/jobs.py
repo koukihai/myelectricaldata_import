@@ -2,7 +2,7 @@ import logging
 import time
 import traceback
 from os import getenv
-from datasources.gateway.account import Account
+from repositories.account import Account
 from dependencies import (
     str2bool,
     title,

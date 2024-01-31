@@ -229,6 +229,15 @@ class Database:
         title("Refresh ORM Objects")
         self.session.expire_all()
 
+    def one_or_none(self, query):
+        return self.session.scalars(query).one_or_none()
+
+    def flush(self):
+        return self.session.flush()
+
+    def close(self):
+        return self.session.close()
+
     ## ----------------------------------------------------------------------------------------------------------------
     ## CONFIG
     ## ----------------------------------------------------------------------------------------------------------------

@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytz
 
-from datasources.gateway.account import status, Account
+from repositories.account import Account
 from dependencies import APPLICATION_PATH, get_version, title
 from models.stat import Stat
 from models.jobs import Job
