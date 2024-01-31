@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytz
 
+from datasources.gateway.account import status, Account
 from dependencies import APPLICATION_PATH, get_version, title
 from models.stat import Stat
 from models.jobs import Job
@@ -53,7 +54,7 @@ class Ajax:
 
     def account_status(self):
         title(f"[{self.usage_point_id}] Check du statut du compte.")
-        data = Status(headers=self.headers).status(self.usage_point_id)
+        data = Account(headers=self.headers).status(usage_point_id=self.usage_point_id)
         if isinstance(self.usage_point_config.last_call, datetime):
             data["last_call"] = self.usage_point_config.last_call.strftime("%Y-%m-%d %H:%M")
         else:

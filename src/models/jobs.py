@@ -2,7 +2,7 @@ import logging
 import time
 import traceback
 from os import getenv
-
+from datasources.gateway.account import Account
 from dependencies import (
     str2bool,
     title,
@@ -176,7 +176,7 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            status = Status(headers=self.header_generate()).status(usage_point_id=usage_point_id)
+            status = Account(headers=self.header_generate()).status(usage_point_id=usage_point_id)
             if "error" in status and status["error"]:
                 message = f'{status["status_code"]} - {status["description"]["detail"]}'
                 self.db.set_error_log(usage_point_id, message)

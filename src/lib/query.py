@@ -2,11 +2,12 @@ import requests
 import logging
 
 from dependencies import str2bool
-from init import CONFIG
 
 
 class Query(object):
     def __init__(self, endpoint, headers=None):
+        from init import CONFIG
+
         self.endpoint = endpoint
         self.timeout = 60
         check_ssl = CONFIG.get("ssl")
