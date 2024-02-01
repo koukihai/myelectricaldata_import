@@ -27,8 +27,7 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
     from config import URL
 
     m_set_error_log = mocker.patch("datasources.database.Database.set_error_log")
-    m_usage_point_update = mocker.patch("datasources.db.usage_point.UsagePoint.update")
-    mocker.patch("models.jobs.Job.header_generate")
+    m_usage_point_update = mocker.patch("datasources.db.usagepointdb.UsagePointDB.update")
     requests_mocks = list()
 
     if job.usage_point_id:
@@ -70,7 +69,7 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
 
         if not is_complete:
             # If some fields are missing from a truthy response, an exception is thrown and an error message is displayed
-            assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" in caplog.text
+            assert "ERROR    root:jobs.py:186 Erreur lors de la récupération des informations du compte" in caplog.text
 
             # db.usage_point_update is not called
             assert 0 == m_usage_point_update.call_count
@@ -86,7 +85,7 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
 
     if not is_truthy_response:
         # FIXME: If response(500), no error is displayed
-        assert "ERROR    root:jobs.py:196 Erreur lors de la récupération des informations du compte" not in caplog.text
+        assert "ERROR    root:jobs.py:186 Erreur lors de la récupération des informations du compte" not in caplog.text
         # db.set_error_log is called
         assert expected_count == m_set_error_log.call_count
         for u in enabled_usage_points:

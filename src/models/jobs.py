@@ -2,14 +2,15 @@ import logging
 import time
 import traceback
 from os import getenv
-from repositories.account import Account
+from repositories.gatewayrepository import GatewayRepository
+from repositories.usagepointrepository import UsagePointRepository
 from dependencies import (
     str2bool,
     title,
     finish,
-    get_version,
     log_usage_point_id,
     export_finish,
+    header_generate,
 )
 from init import DB, CONFIG
 from models.export_home_assistant import HomeAssistant
@@ -22,7 +23,6 @@ from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_ecowatt import Ecowatt
 from models.query_power import Power
-from datasources.gateway.gateway import Status, Gateway
 from models.query_tempo import Tempo
 from models.stat import Stat
 
@@ -150,21 +150,11 @@ class Job:
             self.db.unlock()
             return {"status": True, "notif": "Importation terminée"}
 
-    def header_generate(self, token=True):
-        output = {
-            "Content-Type": "application/json",
-            "call-service": "myelectricaldata",
-            "version": get_version(),
-        }
-        if token:
-            output["Authorization"] = self.usage_point_config.token
-        return output
-
     def get_gateway_status(self):
         detail = "Récupération du statut de la passerelle :"
         try:
             title(detail)
-            Gateway(headers=self.header_generate(token=False)).status()
+            GatewayRepository.status()
         except Exception as e:
             traceback.print_exc()
             logging.error(f"Erreur lors de la {detail.lower()}")
@@ -176,7 +166,7 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            status = Account(headers=self.header_generate()).status(usage_point_id=usage_point_id)
+            status = UsagePointRepository(usage_point_id=usage_point_id).get_account_status()
             if "error" in status and status["error"]:
                 message = f'{status["status_code"]} - {status["description"]["detail"]}'
                 self.db.set_error_log(usage_point_id, message)
@@ -203,7 +193,7 @@ class Job:
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
             Contract(
-                headers=self.header_generate(),
+                headers=header_generate(usage_point_config.token),
                 usage_point_id=usage_point_id,
                 config=usage_point_config,
             ).get()
@@ -227,7 +217,7 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            Address(headers=self.header_generate(), usage_point_id=usage_point_id).get()
+            Address(headers=header_generate(usage_point_config.token), usage_point_id=usage_point_id).get()
             export_finish()
 
         try:
@@ -249,7 +239,7 @@ class Job:
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
             if hasattr(usage_point_config, "consumption") and usage_point_config.consumption:
-                Daily(headers=self.header_generate(), usage_point_id=usage_point_id).get()
+                Daily(headers=header_generate(usage_point_config.token), usage_point_id=usage_point_id).get()
                 export_finish()
             else:
                 logging.info(f"{detail} désactivée sur le point de livraison")
@@ -273,7 +263,7 @@ class Job:
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
             if hasattr(usage_point_config, "consumption_detail") and usage_point_config.consumption_detail:
-                Detail(headers=self.header_generate(), usage_point_id=usage_point_id).get()
+                Detail(headers=header_generate(usage_point_config.token), usage_point_id=usage_point_id).get()
                 export_finish()
             else:
                 logging.info(f"{detail} désactivée sur le point de livraison")
@@ -298,7 +288,7 @@ class Job:
             title(f"[{usage_point_id}] {detail} :")
             if hasattr(usage_point_config, "production") and usage_point_config.production:
                 Daily(
-                    headers=self.header_generate(),
+                    headers=header_generate(usage_point_config.token),
                     usage_point_id=usage_point_id,
                     measure_type="production",
                 ).get()
@@ -326,7 +316,7 @@ class Job:
             title(f"[{usage_point_id}] {detail} :")
             if hasattr(usage_point_config, "production_detail") and usage_point_config.production_detail:
                 Detail(
-                    headers=self.header_generate(),
+                    headers=header_generate(usage_point_config.token),
                     usage_point_id=usage_point_id,
                     measure_type="production",
                 ).get()
@@ -352,7 +342,7 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{self.usage_point_id}] {detail} :")
-            Power(headers=self.header_generate(), usage_point_id=usage_point_id).get()
+            Power(headers=header_generate(usage_point_config.token), usage_point_id=usage_point_id).get()
             export_finish()
 
         try:

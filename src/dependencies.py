@@ -1,8 +1,8 @@
 import datetime
 import logging
+from typing import Optional
 from math import floor
 from os import environ, getenv
-
 from art import decor, text2art
 
 from __version__ import VERSION
@@ -76,7 +76,7 @@ def reformat_json(yaml):
 
 
 def truncate(f, n):
-    return floor(f * 10**n) / 10**n
+    return floor(f * 10 ** n) / 10 ** n
 
 
 def title(message):
@@ -148,3 +148,14 @@ def log_usage_point_id(usage_point_id):
     separator()
     logging.info(f'{decor("barcode1")}{text: ^93}{decor("barcode1", reverse=True)}')
     separator()
+
+
+def header_generate(token: Optional[str] = None):
+    output = {
+        "Content-Type": "application/json",
+        "call-service": "myelectricaldata",
+        "version": get_version(),
+    }
+    if token is not None:
+        output["Authorization"] = token
+    return output

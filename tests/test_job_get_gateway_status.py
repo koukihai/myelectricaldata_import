@@ -14,18 +14,18 @@ def test_get_gateway_status(job, caplog, requests_mock, response, status_code):
     if status_code != 200:
         # FIXME: No error is displayed
         assert (
-            "ERROR    root:jobs.py:170 Erreur lors de la récupération du statut de la passerelle :\n"
+            "ERROR    root:jobs.py:160 Erreur lors de la récupération du statut de la passerelle :\n"
             not in caplog.text
         )
 
     if status_code == 200:
         if response:
             assert (
-                "ERROR    root:jobs.py:170 Erreur lors de la récupération du statut de la passerelle :\n"
+                "ERROR    root:jobs.py:160 Erreur lors de la récupération du statut de la passerelle :\n"
                 not in caplog.text
             )
         else:
             assert (
-                "ERROR    root:jobs.py:170 Erreur lors de la récupération du statut de la passerelle :\n"
+                "ERROR    root:jobs.py:160 Erreur lors de la récupération du statut de la passerelle :\n"
                 in caplog.text
             )

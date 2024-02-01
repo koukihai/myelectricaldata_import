@@ -68,34 +68,31 @@ def test_job_import_data(mocker, job, caplog):
 
 
 def test_header_generate(job, caplog):
-    from dependencies import get_version
+    from dependencies import get_version, header_generate
 
-    expected_logs = ""
-    # FIXME: header_generate() assumes job.usage_point_config is populated from a side effect
-    for job.usage_point_config in job.usage_points:
+    for usage_point_config in job.usage_points:
         assert {
-            "Authorization": job.usage_point_config.token,
+            "Authorization": usage_point_config.token,
             "Content-Type": "application/json",
             "call-service": "myelectricaldata",
             "version": get_version(),
-        } == job.header_generate()
-    assert expected_logs == caplog.text
+        } == header_generate(usage_point_config.token)
 
 
 @pytest.mark.parametrize(
     "method, patch, details, line_no",
     [
-        ("get_contract", "models.query_contract.Contract.get", "Récupération des informations contractuelles", 221),
-        ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 242),
-        ("get_consumption", "models.query_daily.Daily.get", "Récupération de la consommation journalière", 266),
-        ("get_consumption_detail", "models.query_detail.Detail.get", "Récupération de la consommation détaillée", 290),
-        ("get_production", "models.query_daily.Daily.get", "Récupération de la production journalière", 318),
-        ("get_production_detail", "models.query_detail.Detail.get", "Récupération de la production détaillée", 346),
+        ("get_contract", "models.query_contract.Contract.get", "Récupération des informations contractuelles", 211),
+        ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 232),
+        ("get_consumption", "models.query_daily.Daily.get", "Récupération de la consommation journalière", 256),
+        ("get_consumption_detail", "models.query_detail.Detail.get", "Récupération de la consommation détaillée", 280),
+        ("get_production", "models.query_daily.Daily.get", "Récupération de la production journalière", 308),
+        ("get_production_detail", "models.query_detail.Detail.get", "Récupération de la production détaillée", 336),
         (
             "get_consumption_max_power",
             "models.query_power.Power.get",
             "Récupération de la puissance maximum journalière",
-            367,
+            357,
         ),
     ],
 )
@@ -118,7 +115,6 @@ def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, met
 
     m = mocker.patch(patch)
     m_set_error_log = mocker.patch("datasources.database.Database.set_error_log")
-    mocker.patch("models.jobs.Job.header_generate")
 
     m.side_effect = side_effect
     m.return_value = return_value

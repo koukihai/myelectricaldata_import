@@ -1,15 +1,17 @@
+from typing import List, Optional
+
 from db_schema import UsagePoints
 from sqlalchemy import create_engine, delete, inspect, update, select, func, desc, asc
 
 
-class UsagePoint:
-    def __init__(self):
+class UsagePointDB:
+    def __init__(self, usage_point_id: Optional[str]):
         from init import DB
         self.db = DB
+        self.id = usage_point_id
 
     def update(
             self,
-            usage_point_id,
             consentement_expiration=None,
             call_number=None,
             quota_reached=None,
@@ -18,7 +20,7 @@ class UsagePoint:
             last_call=None,
             ban=None,
     ):
-        query = select(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id)
+        query = select(UsagePoints).where(UsagePoints.usage_point_id == self.id)
         usage_points = self.db.one_or_none(query)
         if consentement_expiration is not None:
             usage_points.consentement_expiration = consentement_expiration
@@ -37,8 +39,8 @@ class UsagePoint:
         self.db.flush()
         self.db.close()
 
-    def get_usage_point(self, usage_point_id):
-        query = select(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id)
+    def get_usage_point(self):
+        query = select(UsagePoints).where(UsagePoints.usage_point_id == self.id)
         data = self.db.one_or_none(query)
         self.db.close()
         return data

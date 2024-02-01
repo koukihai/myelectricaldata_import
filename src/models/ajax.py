@@ -3,7 +3,6 @@ from datetime import datetime
 
 import pytz
 
-from repositories.account import Account
 from dependencies import APPLICATION_PATH, get_version, title
 from models.stat import Stat
 from models.jobs import Job
@@ -12,7 +11,8 @@ from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_ecowatt import Ecowatt
 from models.query_power import Power
-from datasources.gateway.gateway import Status, Gateway
+from repositories.gatewayrepository import GatewayRepository
+from repositories.usagepointrepository import UsagePointRepository
 from models.query_tempo import Tempo
 from init import DB, CONFIG
 
@@ -50,11 +50,11 @@ class Ajax:
         else:
             msg = "Check de l'état de la passerelle."
         title(msg)
-        return Gateway().status()
+        return GatewayRepository.status()
 
     def account_status(self):
         title(f"[{self.usage_point_id}] Check du statut du compte.")
-        data = Account(headers=self.headers).status(usage_point_id=self.usage_point_id)
+        data = UsagePointRepository(headers=self.headers).get_account_status(usage_point_id=self.usage_point_id)
         if isinstance(self.usage_point_config.last_call, datetime):
             data["last_call"] = self.usage_point_config.last_call.strftime("%Y-%m-%d %H:%M")
         else:
