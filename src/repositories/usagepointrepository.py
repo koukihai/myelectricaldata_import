@@ -12,9 +12,9 @@ class UsagePointRepository:
 
     def get_account_status(self):
         """
-        Retrieve the account status and stores it into the local db
+        Retrieve the account status from the gateway
+        and stores it into the local db
 
-        :param usage_point_id: Usage point ID for which the status is requested
         :return:
         """
         assert self.id, "Operation not supported for unspecified usage point id"
