@@ -1,26 +1,43 @@
-import datetime
 import json
 import logging
 import traceback
 from os import environ, getenv
 
-from dependencies import header_generate
+from dependencies import get_version, header_generate
 from lib.query import Query
 
 
-class UsagePointGW:
-    def __init__(self, usage_point_id: str, token: str):
+class Gateway:
+    @staticmethod
+    def get_status():
+        from config import URL
+        target = f"{URL}/ping"
+        status = {
+            "version": get_version(),
+            "status": False,
+            "information": "MyElectricalData injoignable.",
+        }
+        try:
+            response = Query(endpoint=target).get()
+            if hasattr(response, "status_code") and response.status_code == 200:
+                status = json.loads(response.text)
+                for key, value in status.items():
+                    logging.info(f"{key}: {value}")
+                status["version"] = get_version()
+                return status
+            else:
+                return status
+        except LookupError:
+            return status
+
+    @staticmethod
+    def get_account_status(usage_point_id: str, token: str, use_cache: bool):
         from config import URL
 
-        self.url = URL
-        self.id = usage_point_id
-        self.headers = header_generate(token)
-
-    def get_account_status(self, use_cache: bool):
-        target = f"{self.url}/valid_access/{self.id}"
+        target = f"{URL}/valid_access/{usage_point_id}"
         if use_cache:
             target += "/cache"
-        response = Query(endpoint=target, headers=self.headers).get()
+        response = Query(endpoint=target, headers=header_generate(token)).get()
         if response:
             status = json.loads(response.text)
             if response.status_code == 200:
@@ -49,3 +66,4 @@ class UsagePointGW:
                 "status_code": response.status_code,
                 "description": json.loads(response.text),
             }
+

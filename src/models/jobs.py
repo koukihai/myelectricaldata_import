@@ -2,8 +2,7 @@ import logging
 import time
 import traceback
 from os import getenv
-from repositories.gatewayrepository import GatewayRepository
-from repositories.usagepointrepository import UsagePointRepository
+
 from dependencies import (
     str2bool,
     title,
@@ -25,6 +24,7 @@ from models.query_ecowatt import Ecowatt
 from models.query_power import Power
 from models.query_tempo import Tempo
 from models.stat import Stat
+from repositories.repository import Repository
 
 
 class Job:
@@ -154,7 +154,7 @@ class Job:
         detail = "Récupération du statut de la passerelle :"
         try:
             title(detail)
-            GatewayRepository.status()
+            Repository.get_gateway_status()
         except Exception as e:
             traceback.print_exc()
             logging.error(f"Erreur lors de la {detail.lower()}")
@@ -166,7 +166,7 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            status = UsagePointRepository(usage_point_id=usage_point_id).get_account_status()
+            status = Repository.get_account_status(usage_point_id=usage_point_id)
             if "error" in status and status["error"]:
                 message = f'{status["status_code"]} - {status["description"]["detail"]}'
                 self.db.set_error_log(usage_point_id, message)
