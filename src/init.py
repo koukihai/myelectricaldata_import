@@ -9,7 +9,7 @@ import yaml
 from config import LOG_FORMAT, LOG_FORMAT_DATE, cycle_minimun
 from dependencies import APPLICATION_PATH_DATA, APPLICATION_PATH_LOG, str2bool
 from models.config import Config
-from datasources.database import Database
+from models.datasources.database import Database
 from models.influxdb import InfluxDB
 from models.mqtt import Mqtt
 

@@ -26,8 +26,8 @@ from test_jobs import job
 def test_get_account_status(mocker, job, caplog, status_response, status_code, requests_mock):
     from config import URL
 
-    m_set_error_log = mocker.patch("datasources.database.Database.set_error_log")
-    m_usage_point_update = mocker.patch("datasources.db.usagepointdb.UsagePointDB.update")
+    m_set_error_log = mocker.patch("models.datasources.database.Database.set_error_log")
+    m_usage_point_update = mocker.patch("models.datasources.db.usagepointdb.UsagePointDB.update")
     requests_mocks = list()
 
     if job.usage_point_id:
@@ -65,7 +65,7 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
     if is_truthy_response:
         if status_code != 200:
             # If the status code is truthy, but not 200, the contents of response['detail'] are logged
-            assert f'ERROR    root:gateway.py:59 {status_response["detail"]}\n' in caplog.text
+            assert f'ERROR    root:gatewayapi.py:61 {status_response["detail"]}\n' in caplog.text
 
         if not is_complete:
             # If some fields are missing from a truthy response, an exception is thrown and an error message is displayed

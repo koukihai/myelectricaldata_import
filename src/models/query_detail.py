@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timedelta
 
 from dependencies import title
-from datasources.database import ConsumptionDetail, ProductionDetail
+from models.datasources.database import ConsumptionDetail, ProductionDetail
 from lib.query import Query
 from init import DB, CONFIG
 

@@ -1,8 +1,5 @@
 import pytest
 
-from db_schema import UsagePoints
-from test_jobs import job
-
 
 @pytest.mark.parametrize("usage_point_id", ["pdl1"])
 @pytest.mark.parametrize(
@@ -24,12 +21,12 @@ from test_jobs import job
         ),
     ],
 )
-def test_get_account_status(mocker, usage_point_id, job, caplog, status_response, status_code, requests_mock):
+def test_get_account_status(mocker, usage_point_id, caplog, status_response, status_code, requests_mock):
     from models.ajax import Ajax
     from config import URL
 
-    m_usage_point_update = mocker.patch("datasources.db.usagepointdb.UsagePointDB.update")
-    m_set_error_log = mocker.patch("datasources.database.Database.set_error_log")
+    m_usage_point_update = mocker.patch("models.datasources.db.usagepointdb.UsagePointDB.update")
+    m_set_error_log = mocker.patch("models.datasources.database.Database.set_error_log")
 
     requests_mocks = list()
     requests_mocks.append(requests_mock.get(
@@ -56,7 +53,7 @@ def test_get_account_status(mocker, usage_point_id, job, caplog, status_response
 
     if is_truthy_response:
         if status_code != 200 or not is_complete:
-            assert f'ERROR    root:gateway.py:59 {status_response["detail"]}\n' in caplog.text
+            assert f'ERROR    root:gatewayapi.py:61 {status_response["detail"]}\n' in caplog.text
             assert res == {'description': status_response.get('detail'), 'error': True, 'last_call': None}
 
             # db.usage_point_update is not called

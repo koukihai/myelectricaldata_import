@@ -13,7 +13,8 @@ from models.query_ecowatt import Ecowatt
 from models.query_power import Power
 from models.query_tempo import Tempo
 from init import DB, CONFIG
-from repositories.repository import Repository
+from models.query.account import Account
+from models.query.gateway import Gateway
 
 utc = pytz.UTC
 
@@ -49,11 +50,11 @@ class Ajax:
         else:
             msg = "Check de l'état de la passerelle."
         title(msg)
-        return Repository.get_gateway_status()
+        return Gateway.status()
 
     def account_status(self):
         title(f"[{self.usage_point_id}] Check du statut du compte.")
-        data = Repository.get_account_status(usage_point_id=self.usage_point_id)
+        data = Account.status(usage_point_id=self.usage_point_id)
         if isinstance(self.usage_point_config.last_call, datetime):
             data["last_call"] = self.usage_point_config.last_call.strftime("%Y-%m-%d %H:%M")
         else:

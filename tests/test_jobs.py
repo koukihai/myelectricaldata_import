@@ -108,13 +108,13 @@ def test_header_generate(job, caplog):
 @pytest.mark.parametrize("side_effect", [None, Exception("Mocker: call failed")])
 def test_get_no_return_check(mocker, job, caplog, side_effect, return_value, method, patch, details, line_no):
     """
-    This test covers all methods that call "get" methods from query objects:
+    This test covers all methods that call "get" methods from models.query objects:
     - without checking for their return value
     - without calling set_error_log on failure
     """
 
     m = mocker.patch(patch)
-    m_set_error_log = mocker.patch("datasources.database.Database.set_error_log")
+    m_set_error_log = mocker.patch("models.datasources.database.Database.set_error_log")
 
     m.side_effect = side_effect
     m.return_value = return_value

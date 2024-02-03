@@ -9,7 +9,7 @@ from dependencies import get_version, header_generate
 from lib.query import Query
 
 
-class Gateway:
+class GatewayAPI:
     @staticmethod
     def get_status():
         from config import URL
