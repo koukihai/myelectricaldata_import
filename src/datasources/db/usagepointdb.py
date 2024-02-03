@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from db_schema import UsagePoints
+from db_schema import UsagePoints, Contracts
 from sqlalchemy import create_engine, delete, inspect, update, select, func, desc, asc
 
 
@@ -45,3 +45,13 @@ class UsagePointDB:
         self.db.close()
         return data
 
+    # ----------------------------------------------------------------------------------------------------------------
+    # CONTRACTS
+    # ----------------------------------------------------------------------------------------------------------------
+    def get_contract(self):
+        query = (
+            select(Contracts).join(UsagePoints.relation_contract).where(UsagePoints.usage_point_id == self.id)
+        )
+        data = self.db.one_or_none(query)
+        self.db.close()
+        return data

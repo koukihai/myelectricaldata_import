@@ -3,6 +3,7 @@ import pytest
 from db_schema import UsagePoints
 from test_jobs import job
 
+
 @pytest.mark.parametrize("usage_point_id", ["pdl1"])
 @pytest.mark.parametrize(
     "status_response, status_code",
@@ -11,15 +12,15 @@ from test_jobs import job
         ({"detail": "truthy response"}, 300),
         ({"detail": "falsy response"}, 500),
         (
-            {
-                "consent_expiration_date": "2099-01-01T00:00:00",
-                "call_number": 42,
-                "quota_limit": 42,
-                "quota_reached": 42,
-                "quota_reset_at": "2099-01-01T00:00:00.000000",
-                "ban": False,
-            },
-            200,
+                {
+                    "consent_expiration_date": "2099-01-01T00:00:00",
+                    "call_number": 42,
+                    "quota_limit": 42,
+                    "quota_reached": 42,
+                    "quota_reset_at": "2099-01-01T00:00:00.000000",
+                    "ban": False,
+                },
+                200,
         ),
     ],
 )
