@@ -4,6 +4,7 @@ from datetime import datetime
 import pytz
 
 from dependencies import APPLICATION_PATH, get_version, title
+from models.query.tempo import Tempo
 from models.stat import Stat
 from models.jobs import Job
 from models.query_cache import Cache
@@ -11,7 +12,6 @@ from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_ecowatt import Ecowatt
 from models.query_power import Power
-from models.query_tempo import Tempo
 from init import DB, CONFIG
 from models.query.account import Account
 from models.query.gateway import Gateway
@@ -63,11 +63,11 @@ class Ajax:
 
     def fetch_tempo(self):
         title(f"Récupération des jours Tempo.")
-        return Tempo().fetch()
+        return Tempo.get_data()
 
     def get_tempo(self):
         title(f"Affichage des jours Tempo.")
-        return Tempo().get()
+        return Tempo.load_data()
 
     def fetch_ecowatt(self):
         title(f"Récupération des jours Ecowatt.")

@@ -53,7 +53,7 @@ def test_get_account_status(mocker, usage_point_id, caplog, status_response, sta
 
     if is_truthy_response:
         if status_code != 200 or not is_complete:
-            assert f'ERROR    root:gatewayapi.py:61 {status_response["detail"]}\n' in caplog.text
+            assert f'ERROR    root:gatewayapi.py:62 {status_response["detail"]}\n' in caplog.text
             assert res == {'description': status_response.get('detail'), 'error': True, 'last_call': None}
 
             # db.usage_point_update is not called

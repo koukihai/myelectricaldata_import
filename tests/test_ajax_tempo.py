@@ -38,7 +38,7 @@ def test_fetch_tempo(mocker, caplog, requests_mock, response, status_code):
             assert m_db_set_tempo_config.call_count == 0
 
             assert (
-                    "ERROR    root:query_tempo.py:78 {'error': True, 'description': 'Erreur lors "
+                    "ERROR    root:tempo.py:59 {'error': True, 'description': 'Erreur lors "
                     "de la récupération de données Tempo.'}\n"
                     not in caplog.text
             )
@@ -50,7 +50,7 @@ def test_fetch_tempo(mocker, caplog, requests_mock, response, status_code):
             assert m_db_set_tempo_config.call_count == 0
 
             assert (
-                    "ERROR    root:query_tempo.py:78 {'error': True, 'description': 'Erreur lors "
+                    "ERROR    root:tempo.py:59 {'error': True, 'description': 'Erreur lors "
                     "de la récupération de données Tempo.'}\n"
                     in caplog.text
             )
@@ -80,7 +80,7 @@ def test_get_tempo(mocker, caplog, response):
         assert m_db_set_tempo_config.call_count == 0
 
         assert (
-                "ERROR    root:query_tempo.py:78 {'error': True, 'description': 'Erreur lors "
+                "ERROR    root:tempo.py:59 {'error': True, 'description': 'Erreur lors "
                 "de la récupération de données Tempo.'}\n"
                 not in caplog.text
         )

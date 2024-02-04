@@ -21,10 +21,10 @@ from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query_ecowatt import Ecowatt
 from models.query_power import Power
-from models.query_tempo import Tempo
 from models.stat import Stat
 from models.query.account import Account
 from models.query.gateway import Gateway
+from models.query.tempo import Tempo
 
 
 class Job:
@@ -360,11 +360,11 @@ class Job:
     def get_tempo(self):
         try:
             title(f"Récupération des données Tempo :")
-            Tempo().fetch()
+            Tempo.get_data()
             title(f"Récupération des jours Tempo :")
-            Tempo().fetch_day()
+            Tempo.get_days()
             title(f"Récupération des tarifs Tempo :")
-            Tempo().fetch_price()
+            Tempo.get_price()
             export_finish()
         except Exception as e:
             traceback.print_exc()

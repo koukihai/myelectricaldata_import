@@ -7,7 +7,8 @@ from os import environ, getenv
 
 from dependencies import get_version, header_generate
 from lib.query import Query
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 class GatewayAPI:
     @staticmethod
@@ -68,3 +69,43 @@ class GatewayAPI:
                 "status_code": response.status_code,
                 "description": json.loads(response.text),
             }
+
+    @staticmethod
+    def get_tempo_data():
+        from config import URL
+
+        start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
+        end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
+        target = f"{URL}/rte/tempo/{start}/{end}"
+        query_response = Query(endpoint=target).get()
+        if query_response.status_code == 200:
+            try:
+                response_json = json.loads(query_response.text)
+                response = response_json
+            except Exception as e:
+                logging.error(e)
+                traceback.print_exc()
+                response = {
+                    "error": True,
+                    "description": "Erreur lors de la récupération de données Tempo.",
+                }
+            return response
+        else:
+            return {
+                "error": True,
+                "description": json.loads(query_response.text)["detail"],
+            }
+
+    @staticmethod
+    def get_tempo_days():
+        from config import URL
+
+        target = f"{URL}/edf/tempo/days"
+        query_response = Query(endpoint=target).get()
+        return query_response
+
+    @staticmethod
+    def get_tempo_price():
+        from config import URL
+        target = f"{URL}/edf/tempo/price"
+        return Query(endpoint=target).get()
