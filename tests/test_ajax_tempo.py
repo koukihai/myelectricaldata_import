@@ -3,12 +3,14 @@ from json import JSONDecodeError
 from dateutil.relativedelta import relativedelta
 import pytest
 
+from db_schema import Tempo
+
 
 @pytest.mark.parametrize("response, status_code", [(None, 200), (None, 500), ({"mock": "response"}, 200), ({"2099-01-01": "turquoise"}, 200)])
 def test_fetch_tempo(mocker, caplog, requests_mock, response, status_code):
     from models.ajax import Ajax
     from config import URL
-    from dependencies import get_version
+
     start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
     end = (datetime.now() + relativedelta(days=2)).strftime("%Y-%m-%d")
 
@@ -52,3 +54,33 @@ def test_fetch_tempo(mocker, caplog, requests_mock, response, status_code):
                     "de la récupération de données Tempo.'}\n"
                     in caplog.text
             )
+
+
+@pytest.mark.parametrize("response", [None, [Tempo(date="2099-01-01", color="turquoise")]])
+def test_get_tempo(mocker, caplog, response):
+    from models.ajax import Ajax
+
+    m_db_get_tempo = mocker.patch("models.datasources.database.Database.get_tempo")
+    m_db_get_tempo.return_value = response
+    m_db_set_tempo_config = mocker.patch("models.datasources.database.Database.set_tempo_config")
+    m_db_set_tempo = mocker.patch("models.datasources.database.Database.set_tempo")
+
+    ajax = Ajax()
+
+    # FIXME: In case the status_code is not 200 and the response is not a valid json, an exception is raised
+    if not response:
+        with pytest.raises(TypeError):
+            ajax.get_tempo()
+    else:
+        res = ajax.get_tempo()
+        assert res == {r.date: r.color for r in response}
+
+        assert m_db_get_tempo.call_count == 1
+        assert m_db_set_tempo.call_count == 0
+        assert m_db_set_tempo_config.call_count == 0
+
+        assert (
+                "ERROR    root:query_tempo.py:78 {'error': True, 'description': 'Erreur lors "
+                "de la récupération de données Tempo.'}\n"
+                not in caplog.text
+        )
