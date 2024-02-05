@@ -19,7 +19,7 @@ from models.query_address import Address
 from models.query_contract import Contract
 from models.query_daily import Daily
 from models.query_detail import Detail
-from models.query_ecowatt import Ecowatt
+from models.query.ecowatt import Ecowatt
 from models.query_power import Power
 from models.stat import Stat
 from models.query.account import Account
@@ -374,7 +374,7 @@ class Job:
     def get_ecowatt(self):
         try:
             title(f"Récupération des données EcoWatt :")
-            Ecowatt().fetch()
+            Ecowatt.get_data()
             export_finish()
         except Exception as e:
             traceback.print_exc()

@@ -1,11 +1,10 @@
 import ast
-import json
 from datetime import datetime
 from json import JSONDecodeError
 from dateutil.relativedelta import relativedelta
 import pytest
 
-from db_schema import Tempo, Ecowatt
+from db_schema import Ecowatt
 
 
 @pytest.mark.parametrize("response, status_code", [(None, 200), (None, 500), ({"2099-01-01": {"value": 9000, "message": "mock message", "detail": "mock detail"}}, 200)])
@@ -37,7 +36,7 @@ def test_fetch_ecowatt(mocker, caplog, requests_mock, response, status_code):
             assert m_db_set_ecowatt.call_count == 1
 
             assert (
-                   "ERROR    root:query_ecowatt.py:77 {'error': True, 'description': 'Erreur "
+                   "ERROR    root:ecowatt.py:58 {'error': True, 'description': 'Erreur "
                    "lors de la récupération des données Ecowatt.'}\n"
                    not in caplog.text
             )
@@ -48,7 +47,7 @@ def test_fetch_ecowatt(mocker, caplog, requests_mock, response, status_code):
             assert m_db_set_ecowatt.call_count == 0
 
             assert (
-                    "ERROR    root:query_ecowatt.py:77 {'error': True, 'description': 'Erreur "
+                    "ERROR    root:ecowatt.py:58 {'error': True, 'description': 'Erreur "
                     "lors de la récupération des données Ecowatt.'}\n"
                     in caplog.text
             )
@@ -76,7 +75,7 @@ def test_get_ecowatt(mocker, caplog, response):
         assert m_db_set_ecowatt.call_count == 0
 
         assert (
-                "ERROR    root:tempo.py:59 {'error': True, 'description': 'Erreur lors "
+                "ERROR    root:ecowatt.py:58 {'error': True, 'description': 'Erreur lors "
                 "de la récupération de données Tempo.'}\n"
                 not in caplog.text
         )

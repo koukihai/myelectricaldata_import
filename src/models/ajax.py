@@ -10,7 +10,7 @@ from models.jobs import Job
 from models.query_cache import Cache
 from models.query_daily import Daily
 from models.query_detail import Detail
-from models.query_ecowatt import Ecowatt
+from models.query.ecowatt import Ecowatt
 from models.query_power import Power
 from init import DB, CONFIG
 from models.query.account import Account
@@ -71,11 +71,11 @@ class Ajax:
 
     def fetch_ecowatt(self):
         title(f"Récupération des jours Ecowatt.")
-        return Ecowatt().fetch()
+        return Ecowatt.get_data()
 
     def get_ecowatt(self):
         title(f"Affichage des jours Ecowatt.")
-        return Ecowatt().get()
+        return Ecowatt.load_data()
 
     def generate_price(self):
         title(f"[{self.usage_point_id}] Calcul des coûts par type d'abonnements.")

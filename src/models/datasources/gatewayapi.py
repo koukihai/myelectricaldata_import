@@ -109,3 +109,29 @@ class GatewayAPI:
         from config import URL
         target = f"{URL}/edf/tempo/price"
         return Query(endpoint=target).get()
+
+    @staticmethod
+    def get_ecowatt_data():
+        from config import URL
+
+        start = (datetime.now() - relativedelta(years=3)).strftime("%Y-%m-%d")
+        end = (datetime.now() + relativedelta(days=3)).strftime("%Y-%m-%d")
+        target = f"{URL}/rte/ecowatt/{start}/{end}"
+        query_response = Query(endpoint=target).get()
+        if query_response.status_code == 200:
+            try:
+                response_json = json.loads(query_response.text)
+                response = response_json
+            except Exception as e:
+                logging.error(e)
+                traceback.print_exc()
+                response = {
+                    "error": True,
+                    "description": "Erreur lors de la récupération des données Ecowatt.",
+                }
+            return response
+        else:
+            return {
+                "error": True,
+                "description": json.loads(query_response.text)["detail"],
+            }

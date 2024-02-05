@@ -35,7 +35,7 @@ def test_get_ecowatt(mocker, job, caplog, requests_mock, response, status_code):
             assert m_db_set_ecowatt.call_count == 1
 
             assert (
-                    "ERROR    root:query_ecowatt.py:77 {'error': True, 'description': 'Erreur "
+                    "ERROR    root:ecowatt.py:58 {'error': True, 'description': 'Erreur "
                     "lors de la récupération des données Ecowatt.'}\n"
                     not in caplog.text
             )
@@ -44,6 +44,6 @@ def test_get_ecowatt(mocker, job, caplog, requests_mock, response, status_code):
             assert m_db_set_ecowatt.call_count == 0
 
             assert (
-                "ERROR    root:query_ecowatt.py:77 {'error': True, 'description': 'Erreur "
+                "ERROR    root:ecowatt.py:58 {'error': True, 'description': 'Erreur "
                 "lors de la récupération des données Ecowatt.'}\n" in caplog.text
             )
