@@ -27,7 +27,7 @@ def test_get_account_status(mocker, job, caplog, status_response, status_code, r
     from config import URL
 
     m_set_error_log = mocker.patch("models.datasources.database.Database.set_error_log")
-    m_usage_point_update = mocker.patch("models.datasources.db.usagepointdb.UsagePointDB.update")
+    m_usage_point_update = mocker.patch("models.datasources.database.Database.usage_point_update")
     requests_mocks = list()
 
     if job.usage_point_id:

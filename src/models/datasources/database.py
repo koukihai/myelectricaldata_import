@@ -229,15 +229,6 @@ class Database:
         title("Refresh ORM Objects")
         self.session.expire_all()
 
-    def one_or_none(self, query):
-        return self.session.scalars(query).one_or_none()
-
-    def flush(self):
-        return self.session.flush()
-
-    def close(self):
-        return self.session.close()
-
     ## ----------------------------------------------------------------------------------------------------------------
     ## CONFIG
     ## ----------------------------------------------------------------------------------------------------------------
@@ -606,6 +597,36 @@ class Database:
         query = select(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id)
         usage_points = self.session.scalars(query).one_or_none()
         usage_points.last_call = datetime.now()
+        self.session.flush()
+        self.session.close()
+
+    def usage_point_update(
+        self,
+        usage_point_id,
+        consentement_expiration=None,
+        call_number=None,
+        quota_reached=None,
+        quota_limit=None,
+        quota_reset_at=None,
+        last_call=None,
+        ban=None,
+    ):
+        query = select(UsagePoints).where(UsagePoints.usage_point_id == usage_point_id)
+        usage_points = self.session.scalars(query).one_or_none()
+        if consentement_expiration is not None:
+            usage_points.consentement_expiration = consentement_expiration
+        if call_number is not None:
+            usage_points.call_number = call_number
+        if quota_reached is not None:
+            usage_points.quota_reached = quota_reached
+        if quota_limit is not None:
+            usage_points.quota_limit = quota_limit
+        if quota_reset_at is not None:
+            usage_points.quota_reset_at = quota_reset_at
+        if last_call is not None:
+            usage_points.last_call = last_call
+        if ban is not None:
+            usage_points.ban = ban
         self.session.flush()
         self.session.close()
 

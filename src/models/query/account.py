@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from models.datasources.db.usagepointdb import UsagePointDB
 from models.datasources.gatewayapi import GatewayAPI
 
 
@@ -13,11 +12,10 @@ class Account:
 
         :return:
         """
-        assert usage_point_id, "Operation not supported for unspecified usage point id"
-        db = UsagePointDB(usage_point_id=usage_point_id)
+        from init import DB
 
         # Retrieve usage point config setting from DB
-        usage_point_config = db.get_usage_point()
+        usage_point_config = DB.get_usage_point(usage_point_id=usage_point_id)
 
         # Read cache setting and token from retrieved config
         use_cache = getattr(usage_point_config, "cache", True)
@@ -28,7 +26,8 @@ class Account:
 
         # If the status contains an "error" key, the request was successful, and we update the db
         if "error" not in status:
-            db.update(
+            DB.usage_point_update(
+                usage_point_id=usage_point_id,
                 consentement_expiration=datetime.strptime(
                     status["consent_expiration_date"], "%Y-%m-%dT%H:%M:%S"
                 ),

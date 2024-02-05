@@ -25,7 +25,7 @@ def test_get_account_status(mocker, usage_point_id, caplog, status_response, sta
     from models.ajax import Ajax
     from config import URL
 
-    m_usage_point_update = mocker.patch("models.datasources.db.usagepointdb.UsagePointDB.update")
+    m_usage_point_update = mocker.patch("models.datasources.database.Database.usage_point_update")
     m_set_error_log = mocker.patch("models.datasources.database.Database.set_error_log")
 
     requests_mocks = list()
