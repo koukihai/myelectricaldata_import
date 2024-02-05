@@ -82,17 +82,16 @@ def test_header_generate(job, caplog):
 @pytest.mark.parametrize(
     "method, patch, details, line_no",
     [
-        ("get_contract", "models.query_contract.Contract.get", "Récupération des informations contractuelles", 211),
-        ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 232),
-        ("get_consumption", "models.query_daily.Daily.get", "Récupération de la consommation journalière", 256),
-        ("get_consumption_detail", "models.query_detail.Detail.get", "Récupération de la consommation détaillée", 280),
-        ("get_production", "models.query_daily.Daily.get", "Récupération de la production journalière", 308),
-        ("get_production_detail", "models.query_detail.Detail.get", "Récupération de la production détaillée", 336),
+        ("get_addresses", "models.query_address.Address.get", "Récupération des coordonnées postales", 228),
+        ("get_consumption", "models.query_daily.Daily.get", "Récupération de la consommation journalière", 252),
+        ("get_consumption_detail", "models.query_detail.Detail.get", "Récupération de la consommation détaillée", 276),
+        ("get_production", "models.query_daily.Daily.get", "Récupération de la production journalière", 304),
+        ("get_production_detail", "models.query_detail.Detail.get", "Récupération de la production détaillée", 332),
         (
             "get_consumption_max_power",
             "models.query_power.Power.get",
             "Récupération de la puissance maximum journalière",
-            357,
+            353,
         ),
     ],
 )

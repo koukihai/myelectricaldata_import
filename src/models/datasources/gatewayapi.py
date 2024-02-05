@@ -2,13 +2,13 @@ import json
 import logging
 import re
 import traceback
-from datetime import datetime
 from os import environ, getenv
 
 from dependencies import get_version, header_generate
 from lib.query import Query
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+
 
 class GatewayAPI:
     @staticmethod
@@ -128,6 +128,77 @@ class GatewayAPI:
                 response = {
                     "error": True,
                     "description": "Erreur lors de la récupération des données Ecowatt.",
+                }
+            return response
+        else:
+            return {
+                "error": True,
+                "description": json.loads(query_response.text)["detail"],
+            }
+
+    @staticmethod
+    def get_contract(usage_point_id: str, token: str, use_cache: bool):
+        from config import URL
+
+        target = f"{URL}/contracts/{usage_point_id}"
+        if use_cache:
+            target += "/cache"
+
+        query_response = Query(endpoint=target, headers=header_generate(token)).get()
+        if query_response.status_code == 200:
+            try:
+                response_json = json.loads(query_response.text)
+                response = response_json["customer"]["usage_points"][0]
+                usage_point = response["usage_point"]
+                contracts = response["contracts"]
+                response = contracts
+                response.update(usage_point)
+
+                if contracts["offpeak_hours"] is not None:
+                    offpeak_hours = re.search("HC \((.*)\)", contracts["offpeak_hours"]).group(1)
+                else:
+                    offpeak_hours = ""
+                if "last_activation_date" in contracts and contracts["last_activation_date"] is not None:
+                    last_activation_date = (
+                        datetime.strptime(contracts["last_activation_date"], "%Y-%m-%d%z")
+                    ).replace(tzinfo=None)
+                else:
+                    last_activation_date = contracts["last_activation_date"]
+                if (
+                        "last_distribution_tariff_change_date" in contracts
+                        and contracts["last_distribution_tariff_change_date"] is not None
+                ):
+                    last_distribution_tariff_change_date = (
+                        datetime.strptime(
+                            contracts["last_distribution_tariff_change_date"],
+                            "%Y-%m-%d%z",
+                        )
+                    ).replace(tzinfo=None)
+                else:
+                    last_distribution_tariff_change_date = contracts["last_distribution_tariff_change_date"]
+                response["_set_contract"] = {
+                    "usage_point_status": usage_point["usage_point_status"],
+                    "meter_type": usage_point["meter_type"],
+                    "segment": contracts["segment"],
+                    "subscribed_power": contracts["subscribed_power"],
+                    "last_activation_date": last_activation_date,
+                    "distribution_tariff": contracts["distribution_tariff"],
+                    "offpeak_hours_0": offpeak_hours,
+                    "offpeak_hours_1": offpeak_hours,
+                    "offpeak_hours_2": offpeak_hours,
+                    "offpeak_hours_3": offpeak_hours,
+                    "offpeak_hours_4": offpeak_hours,
+                    "offpeak_hours_5": offpeak_hours,
+                    "offpeak_hours_6": offpeak_hours,
+                    "contract_status": contracts["contract_status"],
+                    "last_distribution_tariff_change_date": last_distribution_tariff_change_date,
+                }
+            except Exception as e:
+                logging.error(e)
+                traceback.print_exc()
+                response = {
+                    "error": True,
+                    "description": "Erreur lors de la récupération du contrat.",
                 }
             return response
         else:

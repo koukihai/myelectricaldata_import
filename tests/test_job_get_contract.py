@@ -46,7 +46,7 @@ def test_get_contract(mocker, job, caplog, status_response, status_code, request
 
     if job.usage_point_id:
         rm = requests_mock.get(
-            f"{URL}/contracts/{job.usage_point_id}", json=status_response, status_code=status_code
+            f"{URL}/contracts/{job.usage_point_id}/cache", json=status_response, status_code=status_code
         )
         requests_mocks.append(rm)
         expected_count = 1
@@ -73,7 +73,7 @@ def test_get_contract(mocker, job, caplog, status_response, status_code, request
         if status_code != 200 and status_response:
             # If the status code is truthy, but not 200, the contents of response['detail'] are logged
             assert (
-                    "ERROR    root:query_contract.py:120 {'error': True, 'description': 'truthy "
+                    "ERROR    root:contract.py:43 {'error': True, 'description': 'truthy "
                     "response'}\n" in caplog.text
             )
 
@@ -89,7 +89,7 @@ def test_get_contract(mocker, job, caplog, status_response, status_code, request
     if not is_truthy_response:
         # FIXME: If response(500), no error is displayed
         assert (
-                "ERROR    root:query_contract.py:120 {'error': True, 'description': 'truthy "
+                "ERROR    root:contract.py:43 {'error': True, 'description': 'truthy "
                 "response'}\n" not in caplog.text
         )
         # db.set_error_log is called

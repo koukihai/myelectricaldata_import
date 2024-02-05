@@ -16,7 +16,7 @@ from models.export_home_assistant_ws import HomeAssistantWs
 from models.export_influxdb import ExportInfluxDB
 from models.export_mqtt import ExportMqtt
 from models.query_address import Address
-from models.query_contract import Contract
+from models.query.contract import Contract
 from models.query_daily import Daily
 from models.query_detail import Detail
 from models.query.ecowatt import Ecowatt
@@ -192,11 +192,7 @@ class Job:
         def run(usage_point_config):
             usage_point_id = usage_point_config.usage_point_id
             title(f"[{usage_point_id}] {detail} :")
-            Contract(
-                headers=header_generate(usage_point_config.token),
-                usage_point_id=usage_point_id,
-                config=usage_point_config,
-            ).get()
+            Contract.get(usage_point_id)
             export_finish()
 
         try:
